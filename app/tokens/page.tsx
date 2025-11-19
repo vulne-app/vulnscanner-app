@@ -31,9 +31,9 @@ export default function BuyTokensPage() {
   ];
 
   const paymentMethods = [
-    { name: 'Stripe', icon: '💳' },
-    { name: 'PayPal', icon: '🅿️' },
-    { name: 'Crypto', icon: '₿' }
+    { name: 'STRIPE', icon: '' },
+    { name: 'PAYPAL', icon: '' },
+    { name: 'CRYPTO', icon: '฿' }
   ];
 
   return (
@@ -57,7 +57,7 @@ export default function BuyTokensPage() {
           <div className="text-sm opacity-50 mb-2">YOUR CURRENT BALANCE</div>
           <div className="flex items-center justify-center gap-3">
             <span className="text-6xl font-bold glow-green">327</span>
-            <span className="text-4xl text-purple-400">⚡</span>
+            <span className="text-4xl text-purple-400">[⚡]</span>
             <span className="text-xl opacity-50">tokens</span>
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function BuyTokensPage() {
 
               {/* 3D Icon Placeholder */}
               <div className="placeholder-3d-icon bg-purple-900/20 h-32 w-32 mx-auto mb-4 flex items-center justify-center border border-purple-600">
-                <span className="text-4xl">⚡</span>
+                <span className="text-4xl">[T]</span>
               </div>
 
               {/* Tokens */}
@@ -118,8 +118,8 @@ export default function BuyTokensPage() {
           <div className="flex flex-wrap justify-center gap-8">
             {paymentMethods.map((method, index) => (
               <div key={index} className="text-center">
-                <div className="text-5xl mb-2">{method.icon}</div>
-                <div className="text-sm font-bold">{method.name}</div>
+                {method.icon && <div className="text-5xl mb-2">{method.icon}</div>}
+                <div className="text-lg font-bold text-purple-400">{method.name}</div>
               </div>
             ))}
           </div>

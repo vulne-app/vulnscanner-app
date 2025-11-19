@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import TokenDisplay from '@/components/TokenDisplay';
 import ScanHistoryItem from '@/components/ScanHistoryItem';
 
@@ -47,6 +48,8 @@ const MOCK_STATS = {
 };
 
 export default function DashboardPage() {
+  const [selectedPeriod, setSelectedPeriod] = useState('30 DAYS');
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
@@ -66,7 +69,7 @@ export default function DashboardPage() {
               <h3 className="text-sm opacity-50 mb-2">CURRENT PLAN</h3>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-4xl font-bold glow-purple">{MOCK_USER.plan}</span>
-                <span className="text-2xl">💎</span>
+                <span className="text-2xl">[◆]</span>
               </div>
               <Link
                 href="/pricing"
@@ -105,29 +108,50 @@ export default function DashboardPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6 glow-purple">&gt; STATISTICS</h2>
 
+          {/* Period Selector */}
+          <div className="flex justify-center gap-4 mb-6">
+            {['7 DAYS', '30 DAYS', 'ALL TIME'].map((period) => (
+              <button
+                key={period}
+                onClick={() => setSelectedPeriod(period)}
+                className={`px-4 py-2 font-bold transition-all ${
+                  period === selectedPeriod
+                    ? 'bg-purple-600 border-2 border-purple-400 glow-accent'
+                    : 'bg-black border-2 border-purple-400 hover:bg-gray-900'
+                }`}
+              >
+                [{period}]
+              </button>
+            ))}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Total Scans */}
             <div className="terminal-border bg-black/80 backdrop-blur p-6 text-center">
               <div className="text-5xl font-bold glow-green mb-2">{MOCK_STATS.totalScans}</div>
-              <div className="text-sm opacity-50">TOTAL SCANS</div>
+              <div className="text-sm opacity-50">SCANS (LAST {selectedPeriod === 'ALL TIME' ? 'ALL TIME' : selectedPeriod})</div>
+              <div className="text-xs text-green-400 mt-1">+12% vs previous period</div>
             </div>
 
             {/* Vulnerabilities Found */}
             <div className="terminal-border bg-black/80 backdrop-blur p-6 text-center">
               <div className="text-5xl font-bold text-red-400 mb-2">{MOCK_STATS.vulnsFound}</div>
               <div className="text-sm opacity-50">VULNERABILITIES FOUND</div>
+              <div className="text-xs text-red-400 mt-1">+8% vs previous period</div>
             </div>
 
             {/* Most Common Type */}
             <div className="terminal-border bg-black/80 backdrop-blur p-6 text-center">
               <div className="text-2xl font-bold text-purple-400 mb-2">{MOCK_STATS.mostCommon}</div>
               <div className="text-sm opacity-50">MOST COMMON TYPE</div>
+              <div className="text-xs text-purple-400 mt-1">Consistent trend</div>
             </div>
 
             {/* Tokens Used */}
             <div className="terminal-border bg-black/80 backdrop-blur p-6 text-center">
               <div className="text-5xl font-bold text-purple-400 mb-2">{MOCK_STATS.tokensUsed}</div>
               <div className="text-sm opacity-50">TOKENS USED THIS MONTH</div>
+              <div className="text-xs text-yellow-400 mt-1">+5% vs previous period</div>
             </div>
           </div>
 
@@ -135,7 +159,7 @@ export default function DashboardPage() {
           <div className="mt-6 terminal-border bg-black/80 backdrop-blur p-8">
             <div className="placeholder-3d-icon bg-purple-900/20 h-64 w-full flex items-center justify-center border border-purple-600">
               <div className="text-center">
-                <span className="text-4xl mb-2 block">📊</span>
+                <span className="text-4xl mb-2 block">[CHART]</span>
                 <span className="text-sm opacity-50">[Future 3D Analytics Chart]</span>
               </div>
             </div>

@@ -45,11 +45,20 @@ body::before {
   z-index: 9999;
 }
 
-/* Glow effect violet */
-.glow-purple {
+/* Hiérarchie de glow effects */
+.glow-title {
+  text-shadow: 0 0 15px var(--purple-primary),
+               0 0 30px var(--purple-primary),
+               0 0 45px var(--purple-dark);
+}
+
+.glow-header {
   text-shadow: 0 0 10px var(--purple-primary),
-               0 0 20px var(--purple-primary),
-               0 0 30px var(--purple-dark);
+               0 0 20px var(--purple-primary);
+}
+
+.glow-accent {
+  text-shadow: 0 0 8px var(--purple-primary);
 }
 
 .glow-green {
@@ -57,11 +66,23 @@ body::before {
                0 0 20px var(--green-terminal);
 }
 
+/* Legacy support - keep for existing code */
+.glow-purple {
+  text-shadow: 0 0 10px var(--purple-primary),
+               0 0 20px var(--purple-primary);
+}
+
 /* ASCII borders */
 .terminal-border {
   border: 2px solid var(--purple-primary);
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.3),
               inset 0 0 20px rgba(139, 92, 246, 0.1);
+}
+
+.terminal-border-strong {
+  border: 2px solid var(--purple-primary);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.5),
+              inset 0 0 30px rgba(139, 92, 246, 0.2);
 }
 
 /* Scrollbar custom */
@@ -120,4 +141,49 @@ body::before {
   100% {
     transform: translateX(100%) translateY(100%);
   }
+}
+
+/* Système de typographie */
+.text-display {
+  @apply text-5xl font-bold;
+}
+
+.text-title {
+  @apply text-3xl font-bold;
+}
+
+.text-heading {
+  @apply text-xl font-bold;
+}
+
+.text-subheading {
+  @apply text-lg font-bold;
+}
+
+.text-body {
+  @apply text-base;
+}
+
+.text-caption {
+  @apply text-sm;
+}
+
+.text-micro {
+  @apply text-xs;
+}
+
+/* Mobile menu animation */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out;
 }

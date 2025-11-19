@@ -37,6 +37,9 @@ export default function ScanHistoryItem({
             <h4 className="font-bold glow-purple">{url}</h4>
           </div>
           <p className="text-xs opacity-50">{date}</p>
+          {status === 'failed' && (
+            <p className="text-xs text-red-400 mt-1">Error: Connection timeout</p>
+          )}
         </div>
 
         {/* Middle: Vulnerabilities */}
@@ -62,22 +65,62 @@ export default function ScanHistoryItem({
         {/* Right: Cost & Actions */}
         <div className="flex items-center gap-4">
           <div className="text-center">
-            <div className="text-sm text-purple-400 font-bold">{cost} ⚡</div>
+            <div className="text-sm text-purple-400 font-bold">{cost} [⚡]</div>
             <div className="text-xs opacity-50">tokens</div>
           </div>
+
+          {/* Actions selon status */}
           <div className="flex gap-2">
-            <button
-              onClick={() => console.log('TODO: View report')}
-              className="px-3 py-1 bg-purple-600 hover:bg-purple-500 border border-purple-400 text-xs font-bold transition-all"
-            >
-              [VIEW]
-            </button>
-            <button
-              onClick={() => console.log('TODO: Re-scan')}
-              className="px-3 py-1 bg-black hover:bg-gray-900 border border-purple-400 text-xs font-bold transition-all"
-            >
-              [RE-SCAN]
-            </button>
+            {status === 'completed' && (
+              <>
+                <button
+                  onClick={() => console.log('TODO: View report')}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-500 border border-purple-400 text-xs font-bold"
+                >
+                  [VIEW]
+                </button>
+                <button
+                  onClick={() => console.log('TODO: Re-scan')}
+                  className="px-3 py-1 bg-black hover:bg-gray-900 border border-purple-400 text-xs font-bold"
+                >
+                  [RE-SCAN]
+                </button>
+              </>
+            )}
+
+            {status === 'running' && (
+              <>
+                <button
+                  onClick={() => console.log('TODO: View details')}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-500 border border-purple-400 text-xs font-bold"
+                >
+                  [DETAILS]
+                </button>
+                <button
+                  onClick={() => console.log('TODO: Cancel scan')}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-500 border border-red-400 text-xs font-bold"
+                >
+                  [CANCEL]
+                </button>
+              </>
+            )}
+
+            {status === 'failed' && (
+              <>
+                <button
+                  onClick={() => console.log('TODO: View error')}
+                  className="px-3 py-1 bg-orange-600 hover:bg-orange-500 border border-orange-400 text-xs font-bold"
+                >
+                  [VIEW ERROR]
+                </button>
+                <button
+                  onClick={() => console.log('TODO: Retry scan')}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-500 border border-red-400 text-xs font-bold"
+                >
+                  [RETRY]
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

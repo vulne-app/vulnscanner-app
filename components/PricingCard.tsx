@@ -22,7 +22,7 @@ export default function PricingCard({
   accentColor = 'border-purple-400'
 }: PricingCardProps) {
   return (
-    <div className={`terminal-border bg-black/80 backdrop-blur p-6 relative transition-all hover:scale-105 ${popular ? 'border-4' : ''} ${accentColor}`}>
+    <div className={`${popular ? 'terminal-border-strong' : 'terminal-border'} bg-black/80 backdrop-blur p-6 relative transition-all hover:scale-105`}>
       {/* Badge */}
       {badge && (
         <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${badgeColor} px-4 py-1 text-xs font-bold animate-pulse`}>
@@ -48,6 +48,13 @@ export default function PricingCard({
       <div className="text-center mb-6 pb-6 border-b border-purple-600">
         <span className="text-2xl font-bold text-purple-400">{tokens}</span>
         <span className="text-sm opacity-50"> tokens/month</span>
+      </div>
+
+      {/* Practical Value */}
+      <div className="text-center mb-6 text-xs opacity-70">
+        <div className="text-purple-400 font-bold mb-1">What you can do:</div>
+        <div>~{Math.floor(tokens / 40)} basic scans</div>
+        <div>~{Math.floor(tokens / 100)} full scans</div>
       </div>
 
       {/* Features */}

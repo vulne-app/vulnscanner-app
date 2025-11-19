@@ -23,16 +23,18 @@ export default function TestOption({
     <div
       onClick={locked ? undefined : onToggle}
       className={`
-        terminal-border bg-black/80 backdrop-blur p-4 relative transition-all cursor-pointer
-        ${selected ? 'border-green-400 bg-green-900/20' : 'hover:border-purple-300'}
+        ${selected ? 'terminal-border-strong border-green-400 bg-green-900/20' : 'terminal-border hover:border-purple-300'} bg-black/80 backdrop-blur p-4 relative transition-all cursor-pointer
         ${locked ? 'opacity-50 cursor-not-allowed' : ''}
       `}
     >
       {/* Lock Overlay */}
       {locked && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 terminal-border">
-          <span className="text-3xl mb-2">🔒</span>
-          <span className="text-xs font-bold bg-red-600 px-3 py-1">{lockReason}</span>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-end p-2 z-10 transition-all hover:bg-black/30">
+          {/* Lock Badge - Top Right */}
+          <div className="bg-red-600 px-2 py-1 flex items-center gap-1">
+            <span className="text-sm">[LOCKED]</span>
+            <span className="text-xs font-bold">{lockReason}</span>
+          </div>
         </div>
       )}
 
