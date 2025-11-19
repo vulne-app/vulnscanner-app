@@ -81,3 +81,43 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--purple-light);
 }
+
+/* Button utilities */
+.btn-primary {
+  @apply px-6 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-black hover:bg-gray-900 border-2 border-purple-400 font-bold transition-all;
+}
+
+/* Placeholder for 3D icons */
+.placeholder-3d-icon {
+  position: relative;
+  overflow: hidden;
+}
+
+.placeholder-3d-icon::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(139, 92, 246, 0.1),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%);
+  }
+}
