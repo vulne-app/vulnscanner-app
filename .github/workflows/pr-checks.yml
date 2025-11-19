@@ -1,0 +1,55 @@
+name: PR Checks - Dev Branch
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  # ========================================
+  # TESTS AUTOMATIQUES SUR LES PR
+  # ========================================
+  pr-checks:
+    name: PR Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: false
+
+      - name: Build application
+        run: npm run build
+
+      - name: Check build success
+        run: |
+          if [ $? -ne 0 ]; then
+            echo "❌ Build failed! Fix errors before merging."
+            exit 1
+          fi
+          echo "✅ Build successful!"
+
+      - name: PR Check Summary
+        if: always()
+        run: |
+          echo "================================"
+          echo "PR CHECKS SUMMARY"
+          echo "================================"
+          echo "Branch: ${{ github.head_ref }}"
+          echo "Author: ${{ github.actor }}"
+          echo "================================"

