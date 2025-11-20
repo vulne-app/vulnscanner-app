@@ -46,3 +46,14 @@ export interface ScannerModule {
   name: string;
   scan: (target: string) => Promise<any>;
 }
+
+// src/types/index.ts
+export interface HiddenFileVulnerability {
+  type: 'xss' | 'information_disclosure' | 'csrf' | 'sqli' | 'directory_traversal';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  description: string;
+  location: string;
+  evidence: string;
+  recommendation?: string; // Added for better reporting
+}
