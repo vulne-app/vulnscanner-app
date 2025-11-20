@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { executeScan } from '@/app/lib/scanner';
-import { getAllScans } from '@/app/lib/db';
+import { getAllScans, getUser, deductTokens, addXP, checkAndUnlockAchievements } from '@/app/lib/db';
+
+// Temporary: Use default user until auth is implemented
+const DEFAULT_USER_ID = 'default_user';
 
 /**
  * POST /api/scan
@@ -10,7 +13,18 @@ import { getAllScans } from '@/app/lib/db';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url } = body;
+    const { url, cost = 40 } = body;
+
+    // Get user (for now using default user)
+    const userId = DEFAULT_USER_ID;
+    const user = getUser(userId) as any;
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found. Please create default user first.' },
+        { status: 404 }
+      );
+    }
 
     // Validation de l'URL
     if (!url) {
@@ -30,17 +44,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user has enough tokens
+    if (user.tokens < cost) {
+      return NextResponse.json(
+        { error: 'Insufficient tokens', required: cost, available: user.tokens },
+        { status: 402 }
+      );
+    }
+
+    // Deduct tokens
+    const success = deductTokens(userId, cost);
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Failed to deduct tokens' },
+        { status: 500 }
+      );
+    }
+
     // Générer un ID unique pour le scan
     const scanId = nanoid(10);
 
     // Lancer le scan en arrière-plan (non-bloquant)
-    executeScan(scanId, url).catch(console.error);
+    executeScan(scanId, url, userId).catch(console.error);
+
+    // Add XP for starting a scan
+    addXP(userId, 10);
+
+    // Check and unlock achievements
+    const newAchievements = checkAndUnlockAchievements(userId);
 
     // Retourner immédiatement l'ID du scan
     return NextResponse.json({
       scanId,
       status: 'pending',
       message: 'Scan started successfully',
+      tokensRemaining: user.tokens - cost,
+      xpGained: 10,
+      newAchievements: newAchievements.length > 0 ? newAchievements : undefined
     });
 
   } catch (error) {
@@ -58,7 +98,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   try {
-    const scans = getAllScans();
+    const userId = DEFAULT_USER_ID;
+    const scans = getAllScans(userId);
     return NextResponse.json(scans);
   } catch (error) {
     console.error('Error fetching scans:', error);

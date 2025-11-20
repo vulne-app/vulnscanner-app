@@ -201,30 +201,6 @@ export default function ScanPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header with Tokens */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 glow-purple">[SCAN CONFIGURATION]</h1>
-            <p className="text-sm opacity-50">Configure and launch your security scan</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="terminal-border bg-black/80 px-6 py-3">
-              <div className="text-center">
-                <span className="text-xs opacity-50">AVAILABLE TOKENS</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-2xl font-bold glow-green">{mockTokens}</span>
-                  <span className="text-purple-400">⚡</span>
-                </div>
-              </div>
-            </div>
-            <Link
-              href="/tokens"
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all"
-            >
-              [BUY MORE]
-            </Link>
-          </div>
-        </div>
 
         {/* Scan Configuration Section */}
         <div className="terminal-border bg-black/80 backdrop-blur p-6 mb-6">
@@ -292,7 +268,7 @@ export default function ScanPage() {
         {/* URL Input Section */}
         <div className="terminal-border p-6 bg-black/50 backdrop-blur mb-6">
           <label className="block mb-2 text-sm glow-purple">
-            &gt; ENTER TARGET URL:
+            {'> ENTER TARGET URL:'}
           </label>
           <div className="flex gap-4">
             <input

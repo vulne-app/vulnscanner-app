@@ -14,482 +14,436 @@ const SplineViewer = dynamic(() => import('@/components/SplineViewer'), {
 
 export default function LandingPage() {
   return (
-      <div className="min-h-screen">
-        {/* Hero Section */}
-        <section className="min-h-screen flex items-center justify-center px-8 py-20 relative">
-          <div className="max-w-7xl w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              {/* Left Side - Text Content */}
-              <div className="space-y-6">
-                {/* Title */}
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold glow-title">
-                  TEKTON
-                </h1>
+      <div className="min-h-screen bg-black">
+        {/* Hero Section - Three.js Journey inspired */}
+        <section className="min-h-screen flex items-center justify-center px-6 md:px-12 py-20 relative overflow-hidden">
+          {/* Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-black"></div>
 
-                <p className="text-xl md:text-2xl opacity-80">
-                  Advanced Web Security Testing Platform
-                </p>
+          <div className="max-w-[1400px] w-full relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+              {/* Left - Content */}
+              <div className="space-y-10">
+                <div className="space-y-6">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/50 bg-purple-500/10 backdrop-blur-sm">
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                    <span className="text-sm font-medium text-purple-300">OWASP Top 10 Compliant</span>
+                  </div>
 
-                <p className="text-sm md:text-base opacity-50 max-w-xl">
-                  Detect vulnerabilities, scan ports, find XSS & SQLi exploits with cutting-edge automated scanning technology
-                </p>
+                  <h1 className="text-7xl md:text-8xl lg:text-9xl font-black leading-none tracking-tight">
+                    <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
+                      TEKTON
+                    </span>
+                  </h1>
 
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  <p className="text-3xl md:text-4xl font-bold text-white/90 leading-tight">
+                    Automated Web Security Testing
+                  </p>
+
+                  <p className="text-lg text-white/60 leading-relaxed max-w-xl">
+                    Detect vulnerabilities, scan for XSS & SQLi exploits, and secure your web applications
+                    with cutting-edge automated scanning in real-time.
+                  </p>
+                </div>
+
+                {/* CTA */}
+                <div className="flex flex-col sm:flex-row gap-4">
                   <Link
                       href="/scan"
-                      className="px-8 py-4 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold text-lg transition-all glow-purple hover:scale-105"
+                      className="group relative px-8 py-5 bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50"
                   >
-                    [START FREE SCAN]
+                    <span className="relative z-10">Start Free Scan</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   </Link>
+
                   <Link
                       href="/pricing"
-                      className="px-8 py-4 bg-black hover:bg-gray-900 border-2 border-purple-400 font-bold text-lg transition-all hover:scale-105"
+                      className="px-8 py-5 rounded-xl font-bold text-lg border-2 border-white/20 hover:border-purple-400 transition-all hover:bg-white/5"
                   >
-                    [VIEW PRICING]
+                    View Pricing
                   </Link>
                 </div>
+
+                {/* Trust Metrics */}
+                <div className="flex items-center gap-8 pt-4">
+                  <div>
+                    <div className="text-3xl font-black text-green-400">10K+</div>
+                    <div className="text-sm text-white/50">Scans Performed</div>
+                  </div>
+                  <div className="w-px h-12 bg-white/10"></div>
+                  <div>
+                    <div className="text-3xl font-black text-green-400">50K+</div>
+                    <div className="text-sm text-white/50">Vulnerabilities Found</div>
+                  </div>
+                  <div className="w-px h-12 bg-white/10"></div>
+                  <div>
+                    <div className="text-3xl font-black text-green-400">99.9%</div>
+                    <div className="text-sm text-white/50">Uptime</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Right Side - 3D Spline Visualization */}
-              <div className="h-[500px] lg:h-[600px] w-full relative bg-transparent overflow-hidden">
-                <SplineViewer />
+              {/* Right - 3D */}
+              <div className="h-[600px] lg:h-[700px] relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-transparent rounded-3xl blur-3xl"></div>
+                <div className="relative h-full rounded-2xl overflow-hidden">
+                  <SplineViewer />
+                </div>
               </div>
             </div>
+          </div>
 
+          {/* Scroll Indicator */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+            <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
+              <div className="w-1 h-3 bg-white/50 rounded-full"></div>
+            </div>
           </div>
         </section>
 
-        {/* Features Section - OWASP Top 10 Coverage */}
-        <section data-section-features className="py-20 px-8 border-t-2 border-purple-600">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-4 glow-purple">
-              [COMPREHENSIVE SECURITY TESTING]
-            </h2>
-            <p className="text-center opacity-50 mb-4">
-              Full OWASP Top 10 vulnerability detection powered by advanced automation
-            </p>
-
-            {/* OWASP Badge */}
-            <div className="flex justify-center mb-12">
-              <div className="terminal-border bg-purple-900/20 px-6 py-3">
-                <span className="text-sm font-bold text-purple-400">OWASP TOP 10 COMPLIANT</span>
-              </div>
+        {/* Features Section */}
+        <section className="py-32 px-6 md:px-12 relative">
+          <div className="max-w-[1400px] mx-auto">
+            {/* Header */}
+            <div className="text-center mb-24 space-y-4">
+              <h2 className="text-5xl md:text-6xl font-black">
+                <span className="bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+                  Comprehensive Security Coverage
+                </span>
+              </h2>
+              <p className="text-xl text-white/60 max-w-2xl mx-auto">
+                Complete OWASP Top 10 protection with automated detection and real-time reporting
+              </p>
             </div>
 
-            {/* Main Capabilities Grid - 3 colonnes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              {/* Capability 1: Injection Attacks */}
-              <div className="terminal-border bg-black/80 backdrop-blur p-6 hover:scale-105 transition-all">
-                <div className="placeholder-3d-icon bg-purple-900/20 h-20 w-20 mx-auto mb-4 flex items-center justify-center border border-purple-600">
-                  <span className="text-2xl">{'[>>]'}</span>
-                </div>
-                <h3 className="text-xl font-bold text-center mb-3 glow-purple">INJECTION ATTACKS</h3>
-                <p className="text-xs opacity-70 text-center mb-3">
-                  Detect SQL, NoSQL, OS command, and LDAP injection vulnerabilities
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">SQLi</span>
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">NoSQLi</span>
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">Command</span>
-                </div>
-              </div>
-
-              {/* Capability 2: Authentication & Access */}
-              <div className="terminal-border bg-black/80 backdrop-blur p-6 hover:scale-105 transition-all">
-                <div className="placeholder-3d-icon bg-purple-900/20 h-20 w-20 mx-auto mb-4 flex items-center justify-center border border-purple-600">
-                  <span className="text-2xl">[#]</span>
-                </div>
-                <h3 className="text-xl font-bold text-center mb-3 glow-purple">AUTH & ACCESS</h3>
-                <p className="text-xs opacity-70 text-center mb-3">
-                  Test authentication, session management, and access control flaws
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">Broken Auth</span>
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">IDOR</span>
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">JWT</span>
-                </div>
-              </div>
-
-              {/* Capability 3: XSS & Client-Side */}
-              <div className="terminal-border-strong bg-black/80 backdrop-blur p-6 hover:scale-105 transition-all">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 px-4 py-1 text-xs font-bold animate-pulse">
-                  MOST COMMON
-                </div>
-                <div className="placeholder-3d-icon bg-purple-900/20 h-20 w-20 mx-auto mb-4 flex items-center justify-center border border-purple-600">
-                  <span className="text-2xl">[!]</span>
-                </div>
-                <h3 className="text-xl font-bold text-center mb-3 glow-purple">XSS & CLIENT-SIDE</h3>
-                <p className="text-xs opacity-70 text-center mb-3">
-                  Identify Cross-Site Scripting and client-side injection vulnerabilities
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">Reflected XSS</span>
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">Stored XSS</span>
-                  <span className="text-xs bg-purple-900/30 px-2 py-1 border border-purple-600">DOM XSS</span>
-                </div>
-              </div>
+            {/* Main Features */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+              {[
+                {
+                  icon: '>>',
+                  title: 'Injection Detection',
+                  description: 'SQL, NoSQL, OS command, and LDAP injection vulnerabilities detected automatically'
+                },
+                {
+                  icon: '#',
+                  title: 'Access Control',
+                  description: 'Authentication flaws, broken access control, and session management issues'
+                },
+                {
+                  icon: '!',
+                  title: 'XSS & Client-Side',
+                  description: 'Cross-site scripting, DOM-based attacks, and client-side vulnerabilities'
+                }
+              ].map((feature, i) => (
+                  <div key={i} className="group p-8 rounded-2xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 hover:border-purple-500/50 transition-all hover:scale-105">
+                    <div className="text-6xl mb-6 font-black text-purple-400 group-hover:scale-110 transition-transform">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3 text-white">{feature.title}</h3>
+                    <p className="text-white/60 leading-relaxed">{feature.description}</p>
+                  </div>
+              ))}
             </div>
 
-            {/* OWASP Top 10 Comprehensive List */}
-            <div className="terminal-border bg-black/80 backdrop-blur p-8">
-              <h3 className="text-2xl font-bold text-center mb-6 glow-header">
-                &gt; FULL OWASP TOP 10 COVERAGE
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-w-4xl mx-auto">
-                {/* OWASP 1 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A01: Broken Access Control</h4>
-                    <p className="text-xs opacity-60">IDOR, privilege escalation, path traversal</p>
-                  </div>
-                </div>
-
-                {/* OWASP 2 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A02: Cryptographic Failures</h4>
-                    <p className="text-xs opacity-60">Weak encryption, exposed sensitive data</p>
-                  </div>
-                </div>
-
-                {/* OWASP 3 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A03: Injection</h4>
-                    <p className="text-xs opacity-60">SQL, NoSQL, OS command, LDAP injection</p>
-                  </div>
-                </div>
-
-                {/* OWASP 4 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A04: Insecure Design</h4>
-                    <p className="text-xs opacity-60">Missing security controls, threat modeling</p>
-                  </div>
-                </div>
-
-                {/* OWASP 5 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A05: Security Misconfiguration</h4>
-                    <p className="text-xs opacity-60">Default configs, unnecessary features</p>
-                  </div>
-                </div>
-
-                {/* OWASP 6 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A06: Vulnerable Components</h4>
-                    <p className="text-xs opacity-60">Outdated libraries, known CVEs</p>
-                  </div>
-                </div>
-
-                {/* OWASP 7 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A07: Auth & Session Failures</h4>
-                    <p className="text-xs opacity-60">Broken authentication, session hijacking</p>
-                  </div>
-                </div>
-
-                {/* OWASP 8 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A08: Software & Data Integrity</h4>
-                    <p className="text-xs opacity-60">Insecure CI/CD, untrusted sources</p>
-                  </div>
-                </div>
-
-                {/* OWASP 9 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A09: Security Logging Failures</h4>
-                    <p className="text-xs opacity-60">Insufficient logging and monitoring</p>
-                  </div>
-                </div>
-
-                {/* OWASP 10 */}
-                <div className="flex items-start gap-3 group hover:bg-purple-900/10 p-3 transition-all">
-                  <span className="text-green-400 font-bold text-sm mt-0.5">✓</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-purple-400 group-hover:glow-accent">A10: Server-Side Request Forgery</h4>
-                    <p className="text-xs opacity-60">SSRF attacks, internal service abuse</p>
-                  </div>
-                </div>
+            {/* OWASP Coverage - Version enrichie */}
+            <div className="mt-32 text-center">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-purple-500/10 border border-purple-500/30 mb-12">
+                <span className="text-green-400 text-2xl">✓</span>
+                <span className="font-bold text-lg">Full OWASP Top 10 2021 Coverage</span>
               </div>
 
-              {/* Additional Coverage */}
-              <div className="mt-8 pt-6 border-t border-purple-600">
-                <p className="text-center text-xs opacity-50">
-                  + Port scanning, technology detection, SSL/TLS analysis, HTTP security headers, and more
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
+                {[
+                  { code: 'A01', name: 'Broken Access Control', severity: 'critical' },
+                  { code: 'A02', name: 'Cryptographic Failures', severity: 'high' },
+                  { code: 'A03', name: 'Injection', severity: 'critical' },
+                  { code: 'A04', name: 'Insecure Design', severity: 'high' },
+                  { code: 'A05', name: 'Security Misconfiguration', severity: 'high' },
+                  { code: 'A06', name: 'Vulnerable Components', severity: 'high' },
+                  { code: 'A07', name: 'Auth & Session Failures', severity: 'critical' },
+                  { code: 'A08', name: 'Software Integrity Failures', severity: 'medium' },
+                  { code: 'A09', name: 'Logging & Monitoring Failures', severity: 'medium' },
+                  { code: 'A10', name: 'Server-Side Request Forgery', severity: 'high' }
+                ].map((item, i) => (
+                    <div key={i} className="group p-6 rounded-2xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 hover:border-green-500/50 transition-all hover:scale-105">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-bold text-purple-400">{item.code}</span>
+                        <div className={`w-2 h-2 rounded-full ${
+                            item.severity === 'critical' ? 'bg-red-500' :
+                                item.severity === 'high' ? 'bg-orange-500' :
+                                    'bg-yellow-500'
+                        }`}></div>
+                      </div>
+                      <div className="text-green-400 text-3xl mb-3 group-hover:scale-125 transition-transform">✓</div>
+                      <div className="text-sm font-semibold text-white/90 leading-tight">{item.name}</div>
+                    </div>
+                ))}
+              </div>
+
+              <p className="mt-12 text-sm text-white/40">
+                + Port scanning • Technology fingerprinting • SSL/TLS analysis • HTTP security headers • Cookie security
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Social Proof / Stats Section */}
+        <section className="py-32 px-6 md:px-12 relative">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="text-5xl md:text-6xl font-black mb-4">
+                <span className="bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+                  Trusted by Security Teams
+                </span>
+              </h2>
+              <p className="text-xl text-white/60">
+                Join thousands of developers securing their applications
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="p-10 rounded-3xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/30 text-center">
+                <div className="text-7xl font-black bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent mb-4">
+                  10,000+
+                </div>
+                <div className="text-lg font-semibold text-white/80 mb-2">Security Scans Performed</div>
+                <div className="text-sm text-white/50">Across 50+ countries worldwide</div>
+              </div>
+
+              <div className="p-10 rounded-3xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/30 text-center">
+                <div className="text-7xl font-black bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent mb-4">
+                  50,000+
+                </div>
+                <div className="text-lg font-semibold text-white/80 mb-2">Vulnerabilities Detected</div>
+                <div className="text-sm text-white/50">Preventing potential breaches</div>
+              </div>
+
+              <div className="p-10 rounded-3xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/30 text-center">
+                <div className="text-7xl font-black bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent mb-4">
+                  99.9%
+                </div>
+                <div className="text-lg font-semibold text-white/80 mb-2">Platform Uptime</div>
+                <div className="text-sm text-white/50">Always available when you need it</div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Competitive Advantage Section - À ajouter avant les Stats */}
-        <section className="py-20 px-8 border-t-2 border-purple-600">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-4 glow-purple">
-              [WHY CHOOSE TEKTON?]
-            </h2>
-            <p className="text-center opacity-50 mb-12">
-              See how we compare to traditional security scanners
-            </p>
-
-            {/* Comparison Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* TEKTON Side - Left */}
-              <div className="terminal-border-strong bg-purple-900/20 backdrop-blur p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-3xl font-bold glow-title mb-2">TEKTON</h3>
-                  <span className="text-xs bg-green-500 text-black px-3 py-1 font-bold">NEXT-GEN SCANNER</span>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Feature 1 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">Full OWASP Top 10 Coverage</h4>
-                      <p className="text-xs opacity-70">Complete protection against all modern web vulnerabilities</p>
-                    </div>
-                  </div>
-
-                  {/* Feature 2 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">Real-Time Results</h4>
-                      <p className="text-xs opacity-70">Live scanning progress with instant vulnerability detection</p>
-                    </div>
-                  </div>
-
-                  {/* Feature 3 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">Pay-As-You-Scan Token System</h4>
-                      <p className="text-xs opacity-70">No monthly commitments, scan only when you need</p>
-                    </div>
-                  </div>
-
-                  {/* Feature 4 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">Automated Technology Detection</h4>
-                      <p className="text-xs opacity-70">Identifies frameworks, servers, and versions automatically</p>
-                    </div>
-                  </div>
-
-                  {/* Feature 5 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">Modern Terminal UI</h4>
-                      <p className="text-xs opacity-70">Intuitive cyberpunk interface designed for security professionals</p>
-                    </div>
-                  </div>
-
-                  {/* Feature 6 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">Detailed Remediation Guides</h4>
-                      <p className="text-xs opacity-70">Step-by-step fixes with code examples for each vulnerability</p>
-                    </div>
-                  </div>
-
-                  {/* Feature 7 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">API-First Architecture</h4>
-                      <p className="text-xs opacity-70">Integrate scans into your CI/CD pipeline effortlessly</p>
-                    </div>
-                  </div>
-
-                  {/* Feature 8 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-xl mt-1">✓</span>
-                    <div>
-                      <h4 className="font-bold text-purple-400 mb-1">Zero False Positives Focus</h4>
-                      <p className="text-xs opacity-70">Advanced verification to minimize noise and wasted time</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Traditional Scanners Side - Right */}
-              <div className="terminal-border bg-black/80 backdrop-blur p-8 relative">
-                {/* Overlay for "outdated" effect */}
-                <div className="absolute top-4 right-4 bg-red-600 px-3 py-1 text-xs font-bold rotate-12">
-                  LEGACY TOOLS
-                </div>
-
-                <div className="text-center mb-6">
-                  <h3 className="text-3xl font-bold opacity-50 mb-2">Traditional Scanners</h3>
-                  <span className="text-xs bg-gray-700 text-gray-400 px-3 py-1 font-bold">OLD APPROACH</span>
-                </div>
-
-                <div className="space-y-4 opacity-60">
-                  {/* Limitation 1 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">Partial Vulnerability Coverage</h4>
-                      <p className="text-xs opacity-70">Often miss modern attack vectors and new CVEs</p>
-                    </div>
-                  </div>
-
-                  {/* Limitation 2 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">Delayed Reporting</h4>
-                      <p className="text-xs opacity-70">Results available hours or days after scan completion</p>
-                    </div>
-                  </div>
-
-                  {/* Limitation 3 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">Expensive Monthly Subscriptions</h4>
-                      <p className="text-xs opacity-70">Locked into costly plans even with occasional use</p>
-                    </div>
-                  </div>
-
-                  {/* Limitation 4 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">Manual Configuration Required</h4>
-                      <p className="text-xs opacity-70">Requires extensive setup for each target application</p>
-                    </div>
-                  </div>
-
-                  {/* Limitation 5 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">Outdated Interface</h4>
-                      <p className="text-xs opacity-70">Clunky dashboards designed decades ago</p>
-                    </div>
-                  </div>
-
-                  {/* Limitation 6 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">Generic Fix Recommendations</h4>
-                      <p className="text-xs opacity-70">Vague advice without actionable code samples</p>
-                    </div>
-                  </div>
-
-                  {/* Limitation 7 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">Complex API Integration</h4>
-                      <p className="text-xs opacity-70">Difficult to automate and integrate with modern DevOps</p>
-                    </div>
-                  </div>
-
-                  {/* Limitation 8 */}
-                  <div className="flex items-start gap-3">
-                    <span className="text-red-400 text-xl mt-1">✗</span>
-                    <div>
-                      <h4 className="font-bold text-gray-400 mb-1">High False Positive Rate</h4>
-                      <p className="text-xs opacity-70">Wastes time investigating non-existent vulnerabilities</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* How it Works Section */}
+        <section className="py-32 px-6 md:px-12 relative bg-gradient-to-b from-transparent via-purple-900/10 to-transparent">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="text-5xl md:text-6xl font-black mb-4">
+                <span className="bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+                  How It Works
+                </span>
+              </h2>
+              <p className="text-xl text-white/60">
+                Security testing in three simple steps
+              </p>
             </div>
 
-            {/* Bottom CTA */}
-            <div className="mt-12 text-center">
-              <div className="terminal-border bg-purple-900/20 backdrop-blur p-6 inline-block">
-                <p className="text-lg font-bold text-purple-400 mb-4">
-                  Ready to experience the difference?
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              {[
+                {
+                  step: '01',
+                  title: 'Enter Target URL',
+                  description: 'Simply paste your web application URL. Our intelligent system automatically detects the technology stack.',
+                  icon: '→'
+                },
+                {
+                  step: '02',
+                  title: 'Select Scan Modules',
+                  description: 'Choose from comprehensive OWASP Top 10 tests or run a full security audit. Customize based on your needs.',
+                  icon: '⚡'
+                },
+                {
+                  step: '03',
+                  title: 'Get Instant Results',
+                  description: 'Receive real-time vulnerability reports with detailed remediation guides and code examples.',
+                  icon: '✓'
+                }
+              ].map((item, i) => (
+                  <div key={i} className="relative group">
+                    <div className="p-8 rounded-3xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 hover:border-purple-500/50 transition-all">
+                      <div className="text-8xl font-black text-purple-500/20 mb-4">{item.step}</div>
+                      <div className="text-5xl mb-6">{item.icon}</div>
+                      <h3 className="text-2xl font-bold text-white mb-4">{item.title}</h3>
+                      <p className="text-white/60 leading-relaxed">{item.description}</p>
+                    </div>
+                    {i < 2 && (
+                        <div className="hidden md:block absolute top-1/2 -right-6 text-4xl text-purple-500/30">
+                          →
+                        </div>
+                    )}
+                  </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Integration Section */}
+        <section className="py-32 px-6 md:px-12">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="p-12 md:p-20 rounded-3xl bg-gradient-to-br from-purple-900/40 via-purple-800/20 to-transparent border-2 border-purple-500/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent"></div>
+
+              <div className="relative z-10 max-w-3xl">
+                <div className="inline-block px-4 py-2 rounded-full bg-green-500/20 text-green-400 text-sm font-bold mb-6">
+                  FOR DEVELOPERS
+                </div>
+
+                <h2 className="text-5xl md:text-6xl font-black mb-6 text-white">
+                  Integrate with Your CI/CD Pipeline
+                </h2>
+
+                <p className="text-xl text-white/70 mb-8 leading-relaxed">
+                  Built for modern DevSecOps workflows. Add automated security testing to your deployment pipeline with our REST API.
                 </p>
+
+                <div className="flex flex-wrap gap-4 mb-8">
+                  {['GitHub Actions', 'GitLab CI', 'Jenkins', 'CircleCI', 'Azure DevOps'].map((tech, i) => (
+                      <div key={i} className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm font-semibold">
+                        {tech}
+                      </div>
+                  ))}
+                </div>
+
                 <Link
-                    href="/scan"
-                    className="inline-block px-8 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all hover:scale-105"
+                    href="/docs"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-bold hover:scale-105 transition-all"
                 >
-                  [TRY TEKTON NOW]
+                  View Documentation
+                  <span>→</span>
                 </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-20 px-8 border-t-2 border-purple-600">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-12 glow-purple">
-              [TRUSTED BY SECURITY PROFESSIONALS]
-            </h2>
+        {/* CTA Section */}
+        <section className="py-32 px-6 md:px-12 relative bg-gradient-to-b from-transparent via-purple-900/5 to-transparent">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="text-center mb-20 space-y-4">
+              <h2 className="text-5xl md:text-6xl font-black">
+                <span className="bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+                  Why Choose TEKTON?
+                </span>
+              </h2>
+              <p className="text-xl text-white/60">
+                Next-generation approach to web security
+              </p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Stat 1 */}
-              <div className="terminal-border bg-black/80 backdrop-blur p-8 text-center">
-                <div className="text-6xl font-bold glow-green mb-2">10,000+</div>
-                <div className="text-sm opacity-50">SCANS PERFORMED</div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* TEKTON */}
+              <div className="p-10 rounded-3xl bg-gradient-to-br from-purple-900/40 via-purple-800/20 to-transparent border-2 border-purple-500/50 relative overflow-hidden">
+                <div className="absolute top-4 right-4 px-4 py-2 rounded-full bg-green-500 text-black text-xs font-black">
+                  NEXT-GEN
+                </div>
+
+                <h3 className="text-4xl font-black mb-8 text-white">TEKTON</h3>
+
+                <div className="space-y-4">
+                  {[
+                    { title: 'Full OWASP Top 10 Coverage', desc: 'Complete protection against all modern web vulnerabilities' },
+                    { title: 'Real-Time Results', desc: 'Live scanning progress with instant vulnerability detection' },
+                    { title: 'Pay-As-You-Scan Token System', desc: 'No monthly commitments, scan only when you need' },
+                    { title: 'Automated Technology Detection', desc: 'Identifies frameworks, servers, and versions automatically' },
+                    { title: 'Modern Terminal UI', desc: 'Intuitive interface designed for security professionals' },
+                    { title: 'Detailed Remediation Guides', desc: 'Step-by-step fixes with code examples' },
+                    { title: 'API-First Architecture', desc: 'CI/CD integration in minutes' },
+                    { title: 'Zero False Positives Focus', desc: 'Advanced verification to minimize noise' }
+                  ].map((item, i) => (
+                      <div key={i} className="flex gap-3">
+                        <span className="text-green-400 text-xl mt-1 flex-shrink-0">✓</span>
+                        <div>
+                          <div className="font-bold text-white">{item.title}</div>
+                          <div className="text-sm text-white/60">{item.desc}</div>
+                        </div>
+                      </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Stat 2 */}
-              <div className="terminal-border bg-black/80 backdrop-blur p-8 text-center">
-                <div className="text-6xl font-bold glow-green mb-2">50,000+</div>
-                <div className="text-sm opacity-50">VULNERABILITIES FOUND</div>
-              </div>
+              {/* Traditional */}
+              <div className="p-10 rounded-3xl bg-gradient-to-br from-white/5 to-transparent border-2 border-white/10 relative">
+                <div className="absolute top-4 right-4 px-4 py-2 rounded-full bg-orange-500/20 text-orange-400 text-xs font-black border border-orange-500/50">
+                  ESTABLISHED
+                </div>
 
-              {/* Stat 3 */}
-              <div className="terminal-border bg-black/80 backdrop-blur p-8 text-center">
-                <div className="text-6xl font-bold glow-green mb-2">99.9%</div>
-                <div className="text-sm opacity-50">UPTIME</div>
+                <h3 className="text-4xl font-black mb-8 text-white/70">Traditional Scanners</h3>
+
+                <div className="space-y-4">
+                  {[
+                    { type: 'positive', title: 'Industry Track Record', desc: 'Years of proven reliability in enterprise' },
+                    { type: 'positive', title: 'Extensive Documentation', desc: 'Large knowledge base and community' },
+                    { type: 'positive', title: 'Compliance Certifications', desc: 'Meet regulatory requirements' },
+                    { type: 'negative', title: 'Delayed Reporting', desc: 'Results available hours or days later' },
+                    { type: 'negative', title: 'Higher Costs', desc: 'Expensive annual contracts' },
+                    { type: 'negative', title: 'Complex Setup', desc: 'Requires extensive configuration' },
+                    { type: 'negative', title: 'Legacy Interface', desc: 'Older UI/UX not optimized' },
+                    { type: 'negative', title: 'False Positives', desc: 'Time spent on non-critical issues' }
+                  ].map((item, i) => (
+                      <div key={i} className={`flex gap-3 ${item.type === 'negative' ? 'opacity-60' : ''}`}>
+                      <span className={`text-xl mt-1 flex-shrink-0 ${item.type === 'positive' ? 'text-green-400' : 'text-red-400'}`}>
+                        {item.type === 'positive' ? '✓' : '✗'}
+                      </span>
+                        <div>
+                          <div className={`font-bold ${item.type === 'positive' ? 'text-white/80' : 'text-white/50'}`}>
+                            {item.title}
+                          </div>
+                          <div className="text-sm text-white/50">{item.desc}</div>
+                        </div>
+                      </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="py-20 px-8 border-t-2 border-purple-600">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-purple">
-              READY TO SECURE YOUR INFRASTRUCTURE?
+        {/* CTA Section */}
+        <section className="py-32 px-6 md:px-12">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <h2 className="text-5xl md:text-7xl font-black">
+              <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
+                Start Securing Your Apps Today
+              </span>
             </h2>
-            <p className="text-lg opacity-70 mb-8">
-              Start scanning in seconds. No credit card required.
+
+            <p className="text-xl text-white/60 max-w-2xl mx-auto">
+              No credit card required. Get comprehensive security insights in minutes.
             </p>
+
             <Link
                 href="/scan"
-                className="inline-block px-12 py-5 bg-purple-600 hover:bg-purple-500 border-4 border-purple-400 font-bold text-xl transition-all glow-purple hover:scale-110 animate-pulse"
+                className="inline-block px-12 py-6 bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl font-bold text-xl hover:scale-105 transition-all hover:shadow-2xl hover:shadow-purple-500/50"
             >
-              [LAUNCH SCANNER]
+              Launch Scanner
             </Link>
+
+            <div className="pt-12 flex items-center justify-center gap-6 text-sm text-white/40">
+              <span>Trusted by security teams</span>
+              <span>•</span>
+              <span>OWASP compliant</span>
+              <span>•</span>
+              <span>Enterprise-ready</span>
+            </div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="py-8 px-8 border-t-2 border-purple-600 text-center text-xs opacity-50">
-          <p>⚠ For educational and authorized security testing only.</p>
-          <p className="mt-2">Do not scan websites without explicit permission.</p>
-          <p className="mt-4">Master 2 - Cloud Computing Project</p>
+        <footer className="py-12 px-6 md:px-12 border-t border-white/10">
+          <div className="max-w-[1400px] mx-auto text-center space-y-4">
+            <div className="text-sm text-white/40 space-y-2">
+              <p>⚠️ For authorized security testing and educational purposes only</p>
+              <p>Always obtain explicit permission before scanning any website</p>
+            </div>
+            <div className="text-xs text-white/30 pt-4">
+              Master 2 Cloud Computing Project © 2025 TEKTON
+            </div>
+          </div>
         </footer>
       </div>
   );

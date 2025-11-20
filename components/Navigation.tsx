@@ -3,13 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from "next/image";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const mockTokens = 327;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTokenTooltip, setShowTokenTooltip] = useState(false);
+  const [showLogoutMenu, setShowLogoutMenu] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Failed to logout:', err);
+    }
+  };
 
   const isActive = (path: string) => {
     return pathname === path ? 'text-purple-400 glow-purple' : 'text-gray-400 hover:text-purple-300';
@@ -31,16 +41,52 @@ export default function Navigation() {
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link href="/scan" className={`font-bold transition-colors ${isActive('/scan')}`}>
               SCAN
-            </Link>
-            <Link href="/pricing" className={`font-bold transition-colors ${isActive('/pricing')}`}>
-              PRICING
             </Link>
             <Link href="/dashboard" className={`font-bold transition-colors ${isActive('/dashboard')}`}>
               DASHBOARD
             </Link>
+            <Link href="/leaderboard" className={`font-bold transition-colors ${isActive('/leaderboard')}`}>
+              LEADERBOARD
+            </Link>
+            <Link href="/community" className={`font-bold transition-colors ${isActive('/community')}`}>
+              COMMUNITY
+            </Link>
+            <Link href="/pricing" className={`font-bold transition-colors ${isActive('/pricing')}`}>
+              PRICING
+            </Link>
+
+            {/* Dropdown Menu for More Options */}
+            <div className="relative group">
+              <button className="font-bold text-gray-400 hover:text-purple-300 transition-colors">
+                MORE ▾
+              </button>
+              <div className="absolute top-full right-0 mt-2 w-48 terminal-border bg-black/95 backdrop-blur-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div className="flex flex-col p-2">
+                  <Link href="/profile" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
+                    👤 Profile
+                  </Link>
+                  <Link href="/settings" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
+                    ⚙️ Settings
+                  </Link>
+                  <Link href="/api-keys" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
+                    🔑 API Keys
+                  </Link>
+                  <Link href="/integrations" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
+                    🔗 Integrations
+                  </Link>
+                  <div className="border-t border-purple-600 my-1"></div>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 hover:bg-red-900/20 text-red-400 hover:text-red-300 transition-all text-sm text-left w-full"
+                  >
+                    🚪 Logout
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Token Display */}
@@ -103,17 +149,47 @@ export default function Navigation() {
 
         {/* Mobile Menu - Slide Down */}
         {mobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-black/95 backdrop-blur-md terminal-border animate-slideDown">
-            <div className="flex flex-col gap-4 p-4">
-              <Link href="/scan" onClick={() => setMobileMenuOpen(false)} className={`text-sm ${isActive('/scan')}`}>
+          <div className="md:hidden absolute top-full left-0 w-full bg-black/95 backdrop-blur-md terminal-border animate-slideDown max-h-[80vh] overflow-y-auto">
+            <div className="flex flex-col gap-3 p-4">
+              <Link href="/scan" onClick={() => setMobileMenuOpen(false)} className={`text-sm font-bold ${isActive('/scan')}`}>
                 [SCAN]
               </Link>
-              <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className={`text-sm ${isActive('/pricing')}`}>
-                [PRICING]
-              </Link>
-              <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className={`text-sm ${isActive('/dashboard')}`}>
+              <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className={`text-sm font-bold ${isActive('/dashboard')}`}>
                 [DASHBOARD]
               </Link>
+              <Link href="/leaderboard" onClick={() => setMobileMenuOpen(false)} className={`text-sm font-bold ${isActive('/leaderboard')}`}>
+                [LEADERBOARD]
+              </Link>
+              <Link href="/community" onClick={() => setMobileMenuOpen(false)} className={`text-sm font-bold ${isActive('/community')}`}>
+                [COMMUNITY]
+              </Link>
+              <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className={`text-sm font-bold ${isActive('/pricing')}`}>
+                [PRICING]
+              </Link>
+
+              <div className="border-t border-purple-600 my-2"></div>
+
+              <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className={`text-sm ${isActive('/profile')}`}>
+                👤 Profile
+              </Link>
+              <Link href="/settings" onClick={() => setMobileMenuOpen(false)} className={`text-sm ${isActive('/settings')}`}>
+                ⚙️ Settings
+              </Link>
+              <Link href="/api-keys" onClick={() => setMobileMenuOpen(false)} className={`text-sm ${isActive('/api-keys')}`}>
+                🔑 API Keys
+              </Link>
+              <Link href="/integrations" onClick={() => setMobileMenuOpen(false)} className={`text-sm ${isActive('/integrations')}`}>
+                🔗 Integrations
+              </Link>
+
+              <div className="border-t border-purple-600 my-2"></div>
+
+              <button
+                onClick={handleLogout}
+                className="text-sm text-red-400 hover:text-red-300 transition-colors text-left w-full"
+              >
+                🚪 Logout
+              </button>
             </div>
           </div>
         )}

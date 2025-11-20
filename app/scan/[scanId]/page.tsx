@@ -185,12 +185,12 @@ export default function ScanResultsPage() {
                     </p>
                     <div className="mb-3">
                       <div className="text-xs opacity-50 mb-1">LOCATION:</div>
-                      <code className="text-xs bg-black p-2 block">/search?q=&lt;script&gt;alert(1)&lt;/script&gt;</code>
+                      <code className="text-xs bg-black p-2 block">{'/search?q=<script>alert(1)</script>'}</code>
                     </div>
                     <div className="mb-3">
                       <div className="text-xs opacity-50 mb-1">VULNERABLE CODE:</div>
                       <code className="text-xs bg-black p-2 block font-mono">
-                        &lt;div&gt;{'{'}query{'}'}&lt;/div&gt;
+                        {'<div>{query}</div>'}
                       </code>
                     </div>
                     <div>

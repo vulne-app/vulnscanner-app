@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(if [ -f tekton.db ])",
+      "Bash(then rm tekton.db)",
+      "Bash(else echo \"Database not found\")",
+      "Bash(fi)",
+      "Bash(taskkill /F /PID 1628)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

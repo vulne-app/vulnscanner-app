@@ -5,53 +5,74 @@ import PricingCard from '@/components/PricingCard';
 export default function PricingPage() {
   const plans = [
     {
-      name: 'BASIC',
+      name: 'FREE',
       price: 'FREE',
-      tokens: 100,
+      tokens: 50,
       features: [
         'Basic port scanning',
-        'Up to 5 scans/day',
+        'Limited to 5 URLs',
+        'Basic scans only',
+        'Watermark on reports',
         'Community support',
-        'Email reports',
-        'Basic vulnerability detection'
+        '1-2 complete scans/month'
       ],
       accentColor: 'border-cyan-400'
     },
     {
-      name: 'PRO',
-      price: '29€',
+      name: 'INDIE',
+      price: '19€',
       tokens: 500,
-      badge: 'POPULAR',
+      badge: 'FREELANCERS',
+      badgeColor: 'bg-blue-600',
+      features: [
+        'All scan types',
+        'Up to 50 URLs',
+        'Exportable PDF reports',
+        '3 months history',
+        'API access (rate limited)',
+        '~10-15 complete scans/month',
+        'Email alerts',
+        'Scheduled scans'
+      ],
+      accentColor: 'border-blue-400'
+    },
+    {
+      name: 'PROFESSIONAL',
+      price: '79€',
+      tokens: 2500,
+      badge: 'MOST POPULAR',
       badgeColor: 'bg-purple-600',
       popular: true,
       features: [
-        'All BASIC features',
-        'Advanced XSS detection',
-        'SQLi testing',
-        'Unlimited scans',
+        'Everything in INDIE',
+        'Unlimited URLs',
+        'Scheduled scans',
+        'Custom branding on reports',
+        'Unlimited history',
+        'Full API access',
+        'Webhooks & Integrations',
         'Priority support',
-        'API access',
-        'Detailed PDF reports',
-        'Custom scan profiles'
+        'Continuous monitoring',
+        '~50-70 complete scans/month'
       ],
       accentColor: 'border-purple-400'
     },
     {
-      name: 'EXPERT',
-      price: '99€',
-      tokens: 2000,
+      name: 'ENTERPRISE',
+      price: 'Custom',
+      tokens: 99999,
       badge: 'BEST VALUE',
       badgeColor: 'bg-yellow-600',
       features: [
-        'All PRO features',
-        'Deep vulnerability scanning',
-        'Zero-day detection',
-        'Unlimited API calls',
-        '24/7 Premium support',
-        'Custom integrations',
-        'Team collaboration',
-        'Advanced analytics',
+        'Unlimited tokens',
+        'On-premise deployment',
+        'Complete white-label',
+        'Multi-users with roles',
+        'SSO / SAML integration',
+        '99.9% SLA',
+        '24/7 support',
         'Compliance reports',
+        'Custom scanners',
         'Dedicated account manager'
       ],
       accentColor: 'border-yellow-400'
