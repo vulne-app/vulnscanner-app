@@ -11,7 +11,7 @@ on:
 
 env:
   NODE_VERSION: '20.x'
-  AZURE_WEBAPP_NAME: 'vulnscanner-app' # Remplace par le nom de ton App Service Azure
+  AZURE_WEBAPP_NAME: 'vulnscanner-app' # ⚠️ REMPLACE PAR TON NOM D'APP SERVICE AZURE
   AZURE_WEBAPP_PACKAGE_PATH: '.'
 
 jobs:
