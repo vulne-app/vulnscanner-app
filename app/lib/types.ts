@@ -35,6 +35,7 @@ export interface ScanResult {
   progress: number;
   currentStep?: string;
   results: {
+    hiddenFiles?:  HiddenFileVulnerability[];
     ports?: PortScanResult[];
     technologies?: TechnologyInfo[];
     vulnerabilities?: Vulnerability[];
@@ -53,7 +54,8 @@ export interface HiddenFileVulnerability {
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
-  location: string;
+  path: string;
+  status: number;
   evidence: string;
   recommendation?: string; // Added for better reporting
 }
