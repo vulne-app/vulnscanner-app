@@ -2,19 +2,65 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import TestOption from '@/components/TestOption';
+import LegalWarningModal from '@/components/LegalWarningModal';
 import { ScanResult } from '../lib/types';
 
 export default function ScanPage() {
+  const router = useRouter();
   const [url, setUrl] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
   const terminalRef = useRef<HTMLDivElement>(null);
 
-  // Mock user data
-  const mockTokens = 327;
-  const mockPlan = 'PRO';
+  // User authentication and data
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  // Legal warning modal
+  const [showLegalWarning, setShowLegalWarning] = useState(false);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+  const [pendingScan, setPendingScan] = useState(false);
+
+  // Check authentication on page load
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        const data = await response.json();
+
+        if (!data.authenticated || !data.user) {
+          // Redirect to login if not authenticated
+          router.push('/login');
+          return;
+        }
+
+        setIsAuthenticated(true);
+        setUser(data.user);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Check if user has accepted terms in this session
+  useEffect(() => {
+    const termsAccepted = localStorage.getItem('tekton_terms_accepted');
+    console.log('[DEBUG] Terms accepted from localStorage:', termsAccepted);
+    if (termsAccepted === 'true') {
+      setHasAcceptedTerms(true);
+    } else {
+      setHasAcceptedTerms(false);
+    }
+  }, []);
 
   // Test selection state
   const [selectedTests, setSelectedTests] = useState({
@@ -44,7 +90,7 @@ export default function ScanPage() {
       name: 'SQLI TESTING',
       description: 'Identify SQL injection points',
       cost: 20,
-      locked: mockPlan === 'BASIC',
+      locked: user?.plan === 'BASIC',
       lockReason: 'PRO ONLY'
     },
     {
@@ -52,7 +98,7 @@ export default function ScanPage() {
       name: 'DEEP SCAN',
       description: 'Comprehensive vulnerability analysis',
       cost: 100,
-      locked: mockPlan !== 'EXPERT',
+      locked: user?.plan !== 'EXPERT',
       lockReason: 'EXPERT ONLY'
     }
   ];
@@ -61,7 +107,7 @@ export default function ScanPage() {
     return selectedTests[test.id as keyof typeof selectedTests] ? sum + test.cost : sum;
   }, 0);
 
-  const hasInsufficientTokens = totalCost > mockTokens;
+  const hasInsufficientTokens = user ? totalCost > user.tokens : true;
 
   // Auto-scroll terminal
   useEffect(() => {
@@ -80,6 +126,19 @@ export default function ScanPage() {
     setTerminalOutput(prev => [...prev, `<span style="color: ${colors[type]}">${text}</span>`]);
   };
 
+  const handleAcceptTerms = () => {
+    // Store acceptance in localStorage
+    localStorage.setItem('tekton_terms_accepted', 'true');
+    setHasAcceptedTerms(true);
+    setShowLegalWarning(false);
+
+    // If there was a pending scan, execute it now
+    if (pendingScan) {
+      setPendingScan(false);
+      executeScan();
+    }
+  };
+
   const startScan = async () => {
     if (!url) {
       addOutput('[ERROR] Please enter a valid URL', 'error');
@@ -91,6 +150,21 @@ export default function ScanPage() {
       return;
     }
 
+    // Check if user has accepted terms
+    console.log('[DEBUG] hasAcceptedTerms:', hasAcceptedTerms);
+    console.log('[DEBUG] showLegalWarning:', showLegalWarning);
+
+    if (!hasAcceptedTerms) {
+      console.log('[DEBUG] Showing legal warning modal...');
+      setPendingScan(true);
+      setShowLegalWarning(true);
+      return;
+    }
+
+    executeScan();
+  };
+
+  const executeScan = async () => {
     setScanning(true);
     setScanResult(null);
     setTerminalOutput([]);
@@ -198,13 +272,39 @@ export default function ScanPage() {
     addOutput('═══════════════════════════════════════════════════════', 'success');
   };
 
+  // Show loading state while checking authentication
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="terminal-border bg-black/90 backdrop-blur p-8 text-center">
+          <div className="text-purple-400 text-4xl mb-4 animate-pulse">⚡</div>
+          <div className="text-lg glow-purple">AUTHENTICATING...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
 
         {/* Scan Configuration Section */}
         <div className="terminal-border bg-black/80 backdrop-blur p-6 mb-6">
-          <h2 className="text-2xl font-bold mb-4 glow-purple">SELECT SCAN TYPES</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold glow-purple">SELECT SCAN TYPES</h2>
+            {hasAcceptedTerms && (
+              <button
+                onClick={() => {
+                  localStorage.removeItem('tekton_terms_accepted');
+                  setHasAcceptedTerms(false);
+                  alert('Legal terms reset. You will see the warning modal on next scan.');
+                }}
+                className="text-xs px-3 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 transition-all"
+              >
+                [Reset Legal Terms]
+              </button>
+            )}
+          </div>
 
           {/* Test Options Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -250,7 +350,7 @@ export default function ScanPage() {
                   <div>
                     <div className="font-bold text-red-400">INSUFFICIENT TOKENS</div>
                     <div className="text-xs opacity-70">
-                      You need {totalCost - mockTokens} more tokens to run this scan
+                      You need {totalCost - (user?.tokens || 0)} more tokens to run this scan
                     </div>
                   </div>
                 </div>
@@ -337,6 +437,16 @@ export default function ScanPage() {
           <p>⚠ For educational purposes only. Do not scan websites without permission.</p>
         </div>
       </div>
+
+      {/* Legal Warning Modal */}
+      <LegalWarningModal
+        isOpen={showLegalWarning}
+        onAccept={handleAcceptTerms}
+        onClose={() => {
+          setShowLegalWarning(false);
+          setPendingScan(false);
+        }}
+      />
     </div>
   );
 }

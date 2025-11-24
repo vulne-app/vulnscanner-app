@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUser, updateUser, getUserRank, getUserAchievements, getAllScans } from '@/app/lib/db';
+import { getUser, updateUser, getAllScans } from '@/app/lib/db';
 import { getUserFromSession } from '@/app/lib/auth';
 
 /**
@@ -26,16 +26,76 @@ export async function GET() {
       );
     }
 
-    // Get additional stats
-    const rank = getUserRank(userId);
-    const achievements = getUserAchievements(userId);
+    // Get scans for statistics
     const scans = getAllScans(userId);
+    const completedScans = scans.filter((s: any) => s.status === 'completed');
 
-    const unlockedAchievements = achievements.filter((a: any) => a.unlocked_at);
-    const totalAchievements = achievements.length;
+    // Calculate vulnerability statistics
+    let totalVulns = 0;
+    let criticalVulns = 0;
+    let highVulns = 0;
+    let mediumVulns = 0;
+    let lowVulns = 0;
+    let totalScanTime = 0;
+    const targetCounts: { [key: string]: number } = {};
 
-    // Calculate next level XP
-    const nextLevelXP = 10000; // Fixed XP per level
+    completedScans.forEach((scan: any) => {
+      if (scan.results) {
+        const results = typeof scan.results === 'string' ? JSON.parse(scan.results) : scan.results;
+
+        // Count vulnerabilities by severity
+        if (results.xss_results?.vulnerabilities) {
+          results.xss_results.vulnerabilities.forEach((v: any) => {
+            totalVulns++;
+            if (v.severity === 'CRITICAL') criticalVulns++;
+            else if (v.severity === 'HIGH') highVulns++;
+            else if (v.severity === 'MEDIUM') mediumVulns++;
+            else if (v.severity === 'LOW') lowVulns++;
+          });
+        }
+
+        if (results.sqli_results?.vulnerabilities) {
+          results.sqli_results.vulnerabilities.forEach((v: any) => {
+            totalVulns++;
+            if (v.severity === 'CRITICAL') criticalVulns++;
+            else if (v.severity === 'HIGH') highVulns++;
+            else if (v.severity === 'MEDIUM') mediumVulns++;
+            else if (v.severity === 'LOW') lowVulns++;
+          });
+        }
+      }
+
+      // Track scan time
+      if (scan.completed_at && scan.started_at) {
+        totalScanTime += (scan.completed_at - scan.started_at);
+      }
+
+      // Count targets
+      if (scan.target) {
+        targetCounts[scan.target] = (targetCounts[scan.target] || 0) + 1;
+      }
+    });
+
+    // Calculate average scan time
+    const avgScanTimeMs = completedScans.length > 0 ? totalScanTime / completedScans.length : 0;
+    const avgScanTime = avgScanTimeMs > 0 ? `${Math.round(avgScanTimeMs / 1000)}s` : '0s';
+
+    // Find favorite target
+    let favoriteTarget = 'None yet';
+    let maxCount = 0;
+    Object.entries(targetCounts).forEach(([target, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        favoriteTarget = target;
+      }
+    });
+
+    // Calculate scans this month
+    const now = Date.now();
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const scansThisMonth = scans.filter((s: any) => s.started_at >= monthStart.getTime()).length;
 
     return NextResponse.json({
       user_id: user.user_id,
@@ -46,19 +106,21 @@ export async function GET() {
       country: user.country,
       github: user.github,
       twitter: user.twitter,
-      level: user.level,
-      current_xp: user.current_xp,
-      next_level_xp: nextLevelXP,
-      total_points: user.total_points,
       tokens: user.tokens,
       plan: user.plan,
       streak: user.streak,
-      rank,
+      created_at: user.created_at,
       stats: {
         total_scans: scans.length,
-        completed_scans: scans.filter((s: any) => s.status === 'completed').length,
-        achievements_unlocked: unlockedAchievements.length,
-        total_achievements: totalAchievements
+        completed_scans: completedScans.length,
+        vulns_found: totalVulns,
+        avg_scan_time: avgScanTime,
+        scans_this_month: scansThisMonth,
+        favorite_target: favoriteTarget,
+        critical_vulns: criticalVulns,
+        high_vulns: highVulns,
+        medium_vulns: mediumVulns,
+        low_vulns: lowVulns
       }
     });
 

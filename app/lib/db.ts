@@ -351,25 +351,8 @@ export function updateUser(userId: string, updates: any) {
 }
 
 export function addXP(userId: string, xp: number) {
-  const user = getUser(userId) as any;
-  if (!user) return;
-
-  let newXP = user.current_xp + xp;
-  let newLevel = user.level;
-  const xpPerLevel = 10000; // XP needed per level
-
-  while (newXP >= xpPerLevel) {
-    newXP -= xpPerLevel;
-    newLevel++;
-  }
-
-  updateUser(userId, {
-    current_xp: newXP,
-    level: newLevel,
-    total_points: user.total_points + xp
-  });
-
-  return { newLevel, leveledUp: newLevel > user.level };
+  // XP system removed - function kept for backwards compatibility
+  return { newLevel: 1, leveledUp: false };
 }
 
 export function deductTokens(userId: string, amount: number) {
@@ -467,34 +450,8 @@ export function unlockAchievement(userId: string, achievementId: string) {
 }
 
 export function checkAndUnlockAchievements(userId: string) {
-  const user = getUser(userId) as any;
-  if (!user) return [];
-
-  const scansCount = db.prepare('SELECT COUNT(*) as count FROM scans WHERE user_id = ? AND status = "completed"').get(userId) as any;
-  const vulnsCount = db.prepare('SELECT COUNT(*) as count FROM scans WHERE user_id = ? AND results LIKE "%vulnerabilities%"').get(userId) as any;
-  const apiKeysCount = db.prepare('SELECT COUNT(*) as count FROM api_keys WHERE user_id = ?').get(userId) as any;
-
-  const stats: any = {
-    scans_count: scansCount.count,
-    vulns_found: vulnsCount.count,
-    streak: user.streak,
-    level: user.level,
-    api_keys: apiKeysCount.count
-  };
-
-  const achievements = db.prepare('SELECT * FROM achievements').all() as any[];
-  const unlocked: string[] = [];
-
-  achievements.forEach(ach => {
-    const currentValue = stats[ach.requirement_type] || 0;
-    if (currentValue >= ach.requirement_value) {
-      if (unlockAchievement(userId, ach.achievement_id)) {
-        unlocked.push(ach.achievement_id);
-      }
-    }
-  });
-
-  return unlocked;
+  // Achievement system removed - returning empty array
+  return [];
 }
 
 // ========== API KEYS FUNCTIONS ==========
@@ -581,8 +538,8 @@ export function deleteIntegration(integrationId: string, userId: string) {
 // ========== NOTIFICATION SETTINGS ==========
 
 export function getNotificationSettings(userId: string) {
-  const stmt = db.prepare('SELECT * FROM notification_settings WHERE user_id = ?');
-  return stmt.get(userId);
+  // Notification settings removed - returning null
+  return null;
 }
 
 export function updateNotificationSettings(userId: string, settings: any) {
@@ -597,13 +554,8 @@ export function updateNotificationSettings(userId: string, settings: any) {
 // ========== ACTIVITY FEED FUNCTIONS ==========
 
 export function addActivity(userId: string, type: string, title: string, description?: string, metadata?: any) {
-  const activityId = 'activity_' + Math.random().toString(36).substring(2);
-  const stmt = db.prepare(`
-    INSERT INTO activity_feed (activity_id, user_id, type, title, description, metadata, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-  stmt.run(activityId, userId, type, title, description || null, metadata ? JSON.stringify(metadata) : null, Date.now());
-  return activityId;
+  // Activity feed removed - function kept for backwards compatibility
+  return 'activity_disabled';
 }
 
 export function getActivityFeed(userId: string, limit: number = 50) {
@@ -729,13 +681,8 @@ export function getTokenPurchases(userId: string) {
 // ========== NOTIFICATIONS FUNCTIONS ==========
 
 export function createNotification(userId: string, type: string, title: string, message: string, link?: string) {
-  const notificationId = 'notif_' + Math.random().toString(36).substring(2);
-  const stmt = db.prepare(`
-    INSERT INTO notifications (notification_id, user_id, type, title, message, link, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-  stmt.run(notificationId, userId, type, title, message, link || null, Date.now());
-  return notificationId;
+  // Notifications removed - function kept for backwards compatibility
+  return 'notif_disabled';
 }
 
 export function getNotifications(userId: string, unreadOnly: boolean = false) {

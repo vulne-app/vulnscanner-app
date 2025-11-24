@@ -7,7 +7,7 @@ const AVAILABLE_INTEGRATIONS = [
   {
     id: 'slack',
     name: 'Slack',
-    icon: '💬',
+    icon: '[S]',
     description: 'Get scan notifications and alerts in your Slack channels',
     category: 'Communication',
     connected: true,
@@ -19,19 +19,19 @@ const AVAILABLE_INTEGRATIONS = [
   {
     id: 'discord',
     name: 'Discord',
-    icon: '🎮',
+    icon: '[D]',
     description: 'Receive real-time scan updates in your Discord server',
     category: 'Communication',
     connected: true,
     config: {
-      server: 'TEKTON Community',
+      server: 'TEKTON Security',
       channel: '#scan-results'
     }
   },
   {
     id: 'github',
     name: 'GitHub',
-    icon: '🐙',
+    icon: '[G]',
     description: 'Automatically create issues when vulnerabilities are found',
     category: 'Development',
     connected: false,
@@ -40,7 +40,7 @@ const AVAILABLE_INTEGRATIONS = [
   {
     id: 'gitlab',
     name: 'GitLab',
-    icon: '🦊',
+    icon: '[GL]',
     description: 'Integrate scans into your GitLab CI/CD pipelines',
     category: 'Development',
     connected: false,
@@ -49,7 +49,7 @@ const AVAILABLE_INTEGRATIONS = [
   {
     id: 'jira',
     name: 'Jira',
-    icon: '📋',
+    icon: '[J]',
     description: 'Create tickets for security issues automatically',
     category: 'Project Management',
     connected: false,
@@ -58,7 +58,7 @@ const AVAILABLE_INTEGRATIONS = [
   {
     id: 'jenkins',
     name: 'Jenkins',
-    icon: '⚙️',
+    icon: '[JK]',
     description: 'Run security scans as part of your Jenkins builds',
     category: 'CI/CD',
     connected: false,
@@ -67,7 +67,7 @@ const AVAILABLE_INTEGRATIONS = [
   {
     id: 'circleci',
     name: 'CircleCI',
-    icon: '🔄',
+    icon: '[CI]',
     description: 'Add TEKTON scans to your CircleCI workflows',
     category: 'CI/CD',
     connected: false,
@@ -76,7 +76,7 @@ const AVAILABLE_INTEGRATIONS = [
   {
     id: 'webhooks',
     name: 'Webhooks',
-    icon: '🔗',
+    icon: '[W]',
     description: 'Send scan events to custom endpoints',
     category: 'Custom',
     connected: true,

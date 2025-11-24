@@ -10,7 +10,14 @@
       "Bash(else echo \"Database not found\")",
       "Bash(fi)",
       "Bash(taskkill /F /PID 1628)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(sqlite3:*)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(taskkill:*)",
+      "Bash(if [ -f .next/dev/lock ])",
+      "Bash(then rm .next/dev/lock)",
+      "Bash(else echo \"No lock file found\")",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

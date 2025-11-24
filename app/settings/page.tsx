@@ -491,8 +491,7 @@ export default function SettingsPage() {
                     { key: 'scan_complete', label: 'Scan Complete', desc: 'Notify when a scan finishes' },
                     { key: 'vuln_found', label: 'Vulnerabilities Found', desc: 'Alert on critical vulnerabilities' },
                     { key: 'weekly_report', label: 'Weekly Report', desc: 'Receive weekly security summary' },
-                    { key: 'achievement', label: 'Achievements', desc: 'Notify when you unlock achievements' },
-                    { key: 'rank_change', label: 'Rank Changes', desc: 'Alert on leaderboard position changes' }
+                    { key: 'achievement', label: 'Achievements', desc: 'Notify when you unlock achievements' }
                   ].map((item) => (
                     <div key={item.key} className="flex items-center justify-between p-4 terminal-border bg-purple-900/10">
                       <div>
