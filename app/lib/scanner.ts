@@ -8,10 +8,10 @@ import { scanSQLi } from './scanners/sqli-scanner';
 /**
  * Orchestre l'exécution complète d'un scan
  */
-export async function executeScan(scanId: string, target: string, userId: string = 'default_user'): Promise<void> {
+export async function executeScan(scanId: string, target: string, userId: string = 'default_user', cost: number = 0): Promise<void> {
   try {
     // Initialiser le scan
-    createScan(scanId, target, userId);
+    createScan(scanId, target, userId, cost);
     updateScan(scanId, {
       status: 'running',
       currentStep: 'Initialisation...',

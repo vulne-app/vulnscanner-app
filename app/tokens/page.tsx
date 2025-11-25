@@ -1,8 +1,104 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import TokenPurchaseModal from '@/components/TokenPurchaseModal';
+import TokenPurchaseSuccessModal from '@/components/TokenPurchaseSuccessModal';
 
 export default function BuyTokensPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [selectedPack, setSelectedPack] = useState<{tokens: number; price: string} | null>(null);
+  const [purchaseResult, setPurchaseResult] = useState<{tokens: number; newBalance: number} | null>(null);
+
+  // Check authentication and load user data
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        const sessionData = await response.json();
+
+        if (!sessionData.authenticated || !sessionData.user) {
+          router.push('/login');
+          return;
+        }
+
+        const userResponse = await fetch('/api/user');
+        if (userResponse.ok) {
+          const data = await userResponse.json();
+          setUser(data);
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+        router.push('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [router]);
+
+  const handleBuyClick = (pack: {tokens: number; price: string}) => {
+    setSelectedPack(pack);
+    setShowPurchaseModal(true);
+  };
+
+  const handlePurchaseConfirm = async (paymentMethod: string) => {
+    if (!selectedPack) return;
+
+    try {
+      const response = await fetch('/api/tokens/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokens: selectedPack.tokens,
+          price: selectedPack.price,
+          paymentMethod
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update local user data
+        setUser((prev: any) => ({
+          ...prev,
+          tokens: data.new_balance
+        }));
+
+        // Store purchase result for success modal
+        setPurchaseResult({
+          tokens: data.tokens_added,
+          newBalance: data.new_balance
+        });
+
+        // Close purchase modal and show success modal
+        setShowPurchaseModal(false);
+        setShowSuccessModal(true);
+      } else {
+        alert(`Error: ${data.error || 'Failed to purchase tokens'}`);
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      alert('An error occurred while processing your purchase');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="terminal-border bg-black/90 backdrop-blur p-8 text-center">
+          <div className="text-purple-400 text-4xl mb-4 animate-pulse">[*]</div>
+          <div className="text-lg glow-purple">LOADING...</div>
+        </div>
+      </div>
+    );
+  }
   const tokenPacks = [
     {
       tokens: 100,
@@ -56,7 +152,7 @@ export default function BuyTokensPage() {
         <div className="terminal-border bg-purple-900/20 backdrop-blur p-6 mb-12 text-center">
           <div className="text-sm opacity-50 mb-2">YOUR CURRENT BALANCE</div>
           <div className="flex items-center justify-center gap-3">
-            <span className="text-6xl font-bold glow-green">327</span>
+            <span className="text-6xl font-bold glow-green">{user?.tokens || 0}</span>
             <span className="text-4xl text-purple-400">[⚡]</span>
             <span className="text-xl opacity-50">tokens</span>
           </div>
@@ -101,7 +197,7 @@ export default function BuyTokensPage() {
 
               {/* Buy Button */}
               <button
-                onClick={() => console.log(`TODO: Buy ${pack.tokens} tokens`)}
+                onClick={() => handleBuyClick(pack)}
                 className="w-full py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all"
               >
                 [BUY NOW]
@@ -190,6 +286,22 @@ export default function BuyTokensPage() {
           </Link>
         </div>
       </div>
+
+      {/* Purchase Modal */}
+      <TokenPurchaseModal
+        isOpen={showPurchaseModal}
+        onClose={() => setShowPurchaseModal(false)}
+        onConfirm={handlePurchaseConfirm}
+        tokenPack={selectedPack}
+      />
+
+      {/* Success Modal */}
+      <TokenPurchaseSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        tokensPurchased={purchaseResult?.tokens || 0}
+        newBalance={purchaseResult?.newBalance || 0}
+      />
     </div>
   );
 }

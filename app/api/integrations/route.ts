@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getIntegrations, createIntegration, deleteIntegration } from '@/app/lib/db';
-
-const DEFAULT_USER_ID = 'default_user';
+import { getUserFromSession } from '@/app/lib/auth';
 
 /**
  * GET /api/integrations
@@ -9,10 +8,17 @@ const DEFAULT_USER_ID = 'default_user';
  */
 export async function GET() {
   try {
-    const integrations = getIntegrations(DEFAULT_USER_ID);
+    const userId = await getUserFromSession();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const integrations = getIntegrations(userId);
 
     return NextResponse.json({
-      integrations
+      integrations,
+      count: integrations.length
     });
 
   } catch (error) {
@@ -26,26 +32,41 @@ export async function GET() {
 
 /**
  * POST /api/integrations
- * Create a new integration
+ * Connect a new integration
  */
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserFromSession();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { service, config } = body;
 
-    if (!service || !config) {
+    if (!service) {
       return NextResponse.json(
-        { error: 'service and config are required' },
+        { error: 'Service is required' },
         { status: 400 }
       );
     }
 
-    const integrationId = createIntegration(DEFAULT_USER_ID, service, config);
+    // Check if already connected
+    const existing = getIntegrations(userId) as any[];
+    if (existing.some(i => i.service === service)) {
+      return NextResponse.json(
+        { error: 'Integration already connected' },
+        { status: 400 }
+      );
+    }
+
+    const integrationId = createIntegration(userId, service, config || {});
 
     return NextResponse.json({
       success: true,
       integration_id: integrationId,
-      message: 'Integration created successfully'
+      message: `${service} connected successfully`
     });
 
   } catch (error) {
@@ -59,10 +80,16 @@ export async function POST(request: NextRequest) {
 
 /**
  * DELETE /api/integrations
- * Delete an integration
+ * Disconnect an integration
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const userId = await getUserFromSession();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { integration_id } = body;
 
@@ -73,15 +100,56 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    deleteIntegration(integration_id, DEFAULT_USER_ID);
+    deleteIntegration(integration_id, userId);
 
     return NextResponse.json({
       success: true,
-      message: 'Integration deleted successfully'
+      message: 'Integration disconnected successfully'
     });
 
   } catch (error) {
     console.error('Error deleting integration:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/integrations
+ * Update integration config
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const userId = await getUserFromSession();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { integration_id, config } = body;
+
+    if (!integration_id || !config) {
+      return NextResponse.json(
+        { error: 'integration_id and config are required' },
+        { status: 400 }
+      );
+    }
+
+    // Import db directly for update
+    const db = (await import('@/app/lib/db')).default;
+    const stmt = db.prepare('UPDATE integrations SET config = ? WHERE integration_id = ? AND user_id = ?');
+    stmt.run(JSON.stringify(config), integration_id, userId);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Integration updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Error updating integration:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

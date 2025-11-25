@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import crypto from 'crypto';
 
 const SESSION_COOKIE_NAME = 'tekton_session';
+const USER_ID_COOKIE_NAME = 'tekton_user_id';
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // In-memory session store (in production, use Redis or database)
@@ -22,24 +23,36 @@ export function createSession(userId: string): string {
 
 /**
  * Get user ID from session cookie
+ * Falls back to user_id cookie if session not found (for dev hot reload)
  */
 export async function getUserFromSession(): Promise<string | null> {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-  if (!sessionId) return null;
+  if (sessionId) {
+    const session = sessions.get(sessionId);
 
-  const session = sessions.get(sessionId);
-
-  if (!session) return null;
-
-  // Check if session expired
-  if (Date.now() > session.expiresAt) {
-    sessions.delete(sessionId);
-    return null;
+    if (session) {
+      // Check if session expired
+      if (Date.now() > session.expiresAt) {
+        sessions.delete(sessionId);
+      } else {
+        return session.userId;
+      }
+    }
   }
 
-  return session.userId;
+  // Fallback to user_id cookie (for dev hot reload persistence)
+  const userIdCookie = cookieStore.get(USER_ID_COOKIE_NAME)?.value;
+  if (userIdCookie) {
+    // Re-create session from cookie
+    if (sessionId) {
+      sessions.set(sessionId, { userId: userIdCookie, expiresAt: Date.now() + SESSION_DURATION });
+    }
+    return userIdCookie;
+  }
+
+  return null;
 }
 
 /**
@@ -52,7 +65,7 @@ export function deleteSession(sessionId: string): void {
 /**
  * Set session cookie in response
  */
-export function setSessionCookie(response: NextResponse, sessionId: string): void {
+export function setSessionCookie(response: NextResponse, sessionId: string, userId?: string): void {
   response.cookies.set(SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -60,6 +73,17 @@ export function setSessionCookie(response: NextResponse, sessionId: string): voi
     maxAge: SESSION_DURATION / 1000, // in seconds
     path: '/'
   });
+
+  // Also set user_id cookie for persistence (dev hot reload)
+  if (userId) {
+    response.cookies.set(USER_ID_COOKIE_NAME, userId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_DURATION / 1000,
+      path: '/'
+    });
+  }
 }
 
 /**
@@ -67,6 +91,7 @@ export function setSessionCookie(response: NextResponse, sessionId: string): voi
  */
 export function clearSessionCookie(response: NextResponse): void {
   response.cookies.delete(SESSION_COOKIE_NAME);
+  response.cookies.delete(USER_ID_COOKIE_NAME);
 }
 
 /**

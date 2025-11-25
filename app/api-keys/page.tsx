@@ -1,37 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-// Mock API keys data
-const MOCK_API_KEYS = [
-  {
-    id: '1',
-    name: 'Production API',
-    key: 'tk_live_a8f3d9c2b1e4f6g7h8i9j0k1',
-    created: '2026-01-15',
-    lastUsed: '2 hours ago',
-    requests: 15234,
-    status: 'active'
-  },
-  {
-    id: '2',
-    name: 'Development Testing',
-    key: 'tk_test_x9y8z7w6v5u4t3s2r1q0p9o8',
-    created: '2026-02-20',
-    lastUsed: '5 minutes ago',
-    requests: 8921,
-    status: 'active'
-  },
-  {
-    id: '3',
-    name: 'CI/CD Pipeline',
-    key: 'tk_live_m7n6o5p4q3r2s1t0u9v8w7x6',
-    created: '2025-12-10',
-    lastUsed: 'Never',
-    requests: 0,
-    status: 'inactive'
-  }
-];
+interface APIKey {
+  key_id: string;
+  name: string;
+  key_preview: string;
+  created_at: number;
+  last_used_at: number | null;
+  status: 'active' | 'inactive';
+  requests_count: number;
+}
+
+interface Stats {
+  total_keys: number;
+  active_keys: number;
+  total_requests: number;
+}
 
 const CODE_EXAMPLES = {
   curl: `curl -X POST https://api.tekton.io/v1/scan \\
@@ -94,18 +79,115 @@ echo $response;
 };
 
 export default function ApiKeysPage() {
+  const [keys, setKeys] = useState<APIKey[]>([]);
+  const [stats, setStats] = useState<Stats>({ total_keys: 0, active_keys: 0, total_requests: 0 });
+  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState<{ type: 'revoke' | 'regenerate'; keyId: string; keyName: string } | null>(null);
   const [newKeyName, setNewKeyName] = useState('');
   const [generatedKey, setGeneratedKey] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<'curl' | 'python' | 'javascript' | 'php'>('curl');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const handleCreateKey = () => {
-    const newKey = `tk_live_${Math.random().toString(36).substring(2, 26)}`;
-    setGeneratedKey(newKey);
-    setShowCreateModal(false);
-    setShowKeyModal(true);
+  // Load API keys
+  useEffect(() => {
+    loadKeys();
+  }, []);
+
+  const loadKeys = async () => {
+    try {
+      const response = await fetch('/api/keys');
+      if (response.ok) {
+        const data = await response.json();
+        setKeys(data.keys || []);
+        setStats(data.stats || { total_keys: 0, active_keys: 0, total_requests: 0 });
+      }
+    } catch (error) {
+      console.error('Failed to load API keys:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateKey = async () => {
+    if (!newKeyName.trim()) return;
+
+    setActionLoading('create');
+    try {
+      const response = await fetch('/api/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newKeyName.trim() })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedKey(data.api_key);
+        setShowCreateModal(false);
+        setShowKeyModal(true);
+        setNewKeyName('');
+        loadKeys(); // Refresh list
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to create API key');
+      }
+    } catch (error) {
+      console.error('Failed to create API key:', error);
+      alert('Failed to create API key');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRegenerateKey = async (keyId: string) => {
+    setActionLoading(keyId);
+    setShowConfirmModal(null);
+
+    try {
+      const response = await fetch(`/api/keys/${keyId}`, {
+        method: 'PUT'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedKey(data.api_key);
+        setShowKeyModal(true);
+        loadKeys();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to regenerate API key');
+      }
+    } catch (error) {
+      console.error('Failed to regenerate API key:', error);
+      alert('Failed to regenerate API key');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRevokeKey = async (keyId: string) => {
+    setActionLoading(keyId);
+    setShowConfirmModal(null);
+
+    try {
+      const response = await fetch(`/api/keys/${keyId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        loadKeys();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to revoke API key');
+      }
+    } catch (error) {
+      console.error('Failed to revoke API key:', error);
+      alert('Failed to revoke API key');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const copyToClipboard = (text: string, keyId: string) => {
@@ -114,9 +196,33 @@ export default function ApiKeysPage() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const maskKey = (key: string) => {
-    return key.substring(0, 12) + '•'.repeat(20);
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
+
+  const formatLastUsed = (timestamp: number | null) => {
+    if (!timestamp) return 'Never';
+    const diff = Date.now() - timestamp;
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)} minutes ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`;
+    return formatDate(timestamp);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="terminal-border bg-black/90 backdrop-blur p-8 text-center">
+          <div className="text-purple-400 text-4xl mb-4 animate-pulse">[*]</div>
+          <div className="text-lg glow-purple">LOADING API KEYS...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-8">
@@ -132,15 +238,15 @@ export default function ApiKeysPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="terminal-border bg-black/80 backdrop-blur p-6">
             <div className="text-xs opacity-50 mb-2">TOTAL KEYS</div>
-            <div className="text-4xl font-bold glow-accent">3</div>
+            <div className="text-4xl font-bold glow-accent">{stats.total_keys}</div>
           </div>
           <div className="terminal-border bg-black/80 backdrop-blur p-6">
             <div className="text-xs opacity-50 mb-2">ACTIVE KEYS</div>
-            <div className="text-4xl font-bold text-green-400">2</div>
+            <div className="text-4xl font-bold text-green-400">{stats.active_keys}</div>
           </div>
           <div className="terminal-border bg-black/80 backdrop-blur p-6">
             <div className="text-xs opacity-50 mb-2">TOTAL REQUESTS</div>
-            <div className="text-4xl font-bold text-purple-400">24,155</div>
+            <div className="text-4xl font-bold text-purple-400">{stats.total_requests.toLocaleString()}</div>
           </div>
           <div className="terminal-border bg-black/80 backdrop-blur p-6">
             <div className="text-xs opacity-50 mb-2">RATE LIMIT</div>
@@ -161,61 +267,76 @@ export default function ApiKeysPage() {
           </div>
 
           <div className="p-6 space-y-4">
-            {MOCK_API_KEYS.map((apiKey) => (
-              <div
-                key={apiKey.id}
-                className="terminal-border bg-purple-900/10 p-6 hover:bg-purple-900/20 transition-all"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold glow-accent">{apiKey.name}</h3>
-                      <span className={`text-xs px-3 py-1 font-bold ${
-                        apiKey.status === 'active'
-                          ? 'bg-green-600 border border-green-400'
-                          : 'bg-gray-600 border border-gray-400'
-                      }`}>
-                        {apiKey.status.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="font-mono text-sm opacity-70 mb-2">{maskKey(apiKey.key)}</div>
-                    <div className="text-xs opacity-50">
-                      Created: {apiKey.created} • Last used: {apiKey.lastUsed}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => copyToClipboard(apiKey.key, apiKey.id)}
-                      className="px-3 py-2 bg-purple-600 hover:bg-purple-500 border border-purple-400 font-bold text-xs transition-all"
-                    >
-                      {copiedKey === apiKey.id ? '[✓ COPIED]' : '[COPY]'}
-                    </button>
-                    <button className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 border border-yellow-400 font-bold text-xs transition-all">
-                      [REGENERATE]
-                    </button>
-                    <button className="px-3 py-2 bg-red-600 hover:bg-red-500 border border-red-400 font-bold text-xs transition-all">
-                      [REVOKE]
-                    </button>
-                  </div>
-                </div>
-
-                {/* Usage Stats */}
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-purple-600">
-                  <div>
-                    <div className="text-xs opacity-50">TOTAL REQUESTS</div>
-                    <div className="text-lg font-bold text-green-400">{apiKey.requests.toLocaleString()}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs opacity-50">SUCCESS RATE</div>
-                    <div className="text-lg font-bold text-green-400">99.8%</div>
-                  </div>
-                  <div>
-                    <div className="text-xs opacity-50">AVG RESPONSE</div>
-                    <div className="text-lg font-bold text-purple-400">245ms</div>
-                  </div>
-                </div>
+            {keys.length === 0 ? (
+              <div className="text-center py-12 opacity-50">
+                <div className="text-4xl mb-4">[#]</div>
+                <div>No API keys yet. Create one to get started!</div>
               </div>
-            ))}
+            ) : (
+              keys.map((apiKey) => (
+                <div
+                  key={apiKey.key_id}
+                  className="terminal-border bg-purple-900/10 p-6 hover:bg-purple-900/20 transition-all"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold glow-accent">{apiKey.name}</h3>
+                        <span className={`text-xs px-3 py-1 font-bold ${
+                          apiKey.status === 'active'
+                            ? 'bg-green-600 border border-green-400'
+                            : 'bg-gray-600 border border-gray-400'
+                        }`}>
+                          {apiKey.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="font-mono text-sm opacity-70 mb-2">{apiKey.key_preview}</div>
+                      <div className="text-xs opacity-50">
+                        Created: {formatDate(apiKey.created_at)} | Last used: {formatLastUsed(apiKey.last_used_at)}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => copyToClipboard(apiKey.key_preview, apiKey.key_id)}
+                        className="px-3 py-2 bg-purple-600 hover:bg-purple-500 border border-purple-400 font-bold text-xs transition-all"
+                      >
+                        {copiedKey === apiKey.key_id ? '[OK COPIED]' : '[COPY]'}
+                      </button>
+                      <button
+                        onClick={() => setShowConfirmModal({ type: 'regenerate', keyId: apiKey.key_id, keyName: apiKey.name })}
+                        disabled={actionLoading === apiKey.key_id}
+                        className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 border border-yellow-400 font-bold text-xs transition-all disabled:opacity-50"
+                      >
+                        {actionLoading === apiKey.key_id ? '[...]' : '[REGENERATE]'}
+                      </button>
+                      <button
+                        onClick={() => setShowConfirmModal({ type: 'revoke', keyId: apiKey.key_id, keyName: apiKey.name })}
+                        disabled={actionLoading === apiKey.key_id}
+                        className="px-3 py-2 bg-red-600 hover:bg-red-500 border border-red-400 font-bold text-xs transition-all disabled:opacity-50"
+                      >
+                        {actionLoading === apiKey.key_id ? '[...]' : '[REVOKE]'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Usage Stats */}
+                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-purple-600">
+                    <div>
+                      <div className="text-xs opacity-50">TOTAL REQUESTS</div>
+                      <div className="text-lg font-bold text-green-400">{apiKey.requests_count.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs opacity-50">SUCCESS RATE</div>
+                      <div className="text-lg font-bold text-green-400">99.8%</div>
+                    </div>
+                    <div>
+                      <div className="text-xs opacity-50">AVG RESPONSE</div>
+                      <div className="text-lg font-bold text-purple-400">245ms</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -249,7 +370,7 @@ export default function ApiKeysPage() {
                 onClick={() => copyToClipboard(CODE_EXAMPLES[selectedLanguage], 'code-example')}
                 className="absolute top-4 right-4 px-3 py-1 bg-purple-600 hover:bg-purple-500 border border-purple-400 font-bold text-xs transition-all z-10"
               >
-                {copiedKey === 'code-example' ? '[✓ COPIED]' : '[COPY]'}
+                {copiedKey === 'code-example' ? '[OK COPIED]' : '[COPY]'}
               </button>
               <pre className="bg-black border-2 border-purple-600 p-6 overflow-x-auto font-mono text-sm text-green-400">
                 {CODE_EXAMPLES[selectedLanguage]}
@@ -312,7 +433,7 @@ export default function ApiKeysPage() {
 
         {/* Rate Limits Info */}
         <div className="mt-8 terminal-border bg-yellow-900/20 backdrop-blur p-6">
-          <h3 className="text-xl font-bold mb-4 text-yellow-400">⚠️ RATE LIMITS</h3>
+          <h3 className="text-xl font-bold mb-4 text-yellow-400">[!] RATE LIMITS</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <div className="font-bold mb-1">FREE TIER</div>
@@ -348,7 +469,7 @@ export default function ApiKeysPage() {
             </div>
 
             <div className="mb-6 terminal-border bg-yellow-900/20 p-4">
-              <div className="text-yellow-400 font-bold mb-2">⚠️ SECURITY WARNING</div>
+              <div className="text-yellow-400 font-bold mb-2">[!] SECURITY WARNING</div>
               <div className="text-xs opacity-70">
                 Make sure to copy your API key now. You won't be able to see it again!
                 Store it securely and never commit it to version control.
@@ -358,10 +479,10 @@ export default function ApiKeysPage() {
             <div className="flex gap-4">
               <button
                 onClick={handleCreateKey}
-                disabled={!newKeyName}
+                disabled={!newKeyName || actionLoading === 'create'}
                 className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                [CREATE]
+                {actionLoading === 'create' ? '[CREATING...]' : '[CREATE]'}
               </button>
               <button
                 onClick={() => {
@@ -381,17 +502,17 @@ export default function ApiKeysPage() {
       {showKeyModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur flex items-center justify-center z-50 p-4">
           <div className="terminal-border-strong bg-black p-8 max-w-md w-full">
-            <h2 className="text-3xl font-bold mb-6 glow-header text-green-400">[✓ KEY CREATED]</h2>
+            <h2 className="text-3xl font-bold mb-6 glow-header text-green-400">[OK KEY CREATED]</h2>
 
             <div className="mb-6">
               <div className="text-sm opacity-50 mb-2">YOUR NEW API KEY</div>
-              <div className="bg-black border-2 border-green-600 px-4 py-3 font-mono text-green-400 break-all">
+              <div className="bg-black border-2 border-green-600 px-4 py-3 font-mono text-green-400 break-all text-sm">
                 {generatedKey}
               </div>
             </div>
 
             <div className="mb-6 terminal-border bg-red-900/20 p-4">
-              <div className="text-red-400 font-bold mb-2">⚠️ COPY THIS NOW</div>
+              <div className="text-red-400 font-bold mb-2">[!] COPY THIS NOW</div>
               <div className="text-xs opacity-70">
                 This is the only time you'll see this key. Make sure to copy it to a secure location.
               </div>
@@ -405,13 +526,63 @@ export default function ApiKeysPage() {
                 }}
                 className="flex-1 py-3 bg-green-600 hover:bg-green-500 border-2 border-green-400 font-bold transition-all"
               >
-                {copiedKey === 'new-key' ? '[✓ COPIED]' : '[COPY KEY]'}
+                {copiedKey === 'new-key' ? '[OK COPIED]' : '[COPY KEY]'}
               </button>
               <button
                 onClick={() => setShowKeyModal(false)}
                 className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all"
               >
                 [DONE]
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur flex items-center justify-center z-50 p-4">
+          <div className="terminal-border-strong bg-black p-8 max-w-md w-full">
+            <h2 className="text-3xl font-bold mb-6 glow-header text-yellow-400">
+              [{showConfirmModal.type === 'revoke' ? 'REVOKE' : 'REGENERATE'} KEY?]
+            </h2>
+
+            <div className="mb-6">
+              <div className="text-sm opacity-50 mb-2">KEY NAME</div>
+              <div className="text-lg font-bold">{showConfirmModal.keyName}</div>
+            </div>
+
+            <div className="mb-6 terminal-border bg-yellow-900/20 p-4">
+              <div className="text-yellow-400 font-bold mb-2">[!] WARNING</div>
+              <div className="text-xs opacity-70">
+                {showConfirmModal.type === 'revoke'
+                  ? 'This will permanently delete this API key. Any applications using this key will stop working immediately.'
+                  : 'This will generate a new API key. The old key will stop working immediately. Make sure to update your applications with the new key.'}
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  if (showConfirmModal.type === 'revoke') {
+                    handleRevokeKey(showConfirmModal.keyId);
+                  } else {
+                    handleRegenerateKey(showConfirmModal.keyId);
+                  }
+                }}
+                className={`flex-1 py-3 font-bold transition-all ${
+                  showConfirmModal.type === 'revoke'
+                    ? 'bg-red-600 hover:bg-red-500 border-2 border-red-400'
+                    : 'bg-yellow-600 hover:bg-yellow-500 border-2 border-yellow-400'
+                }`}
+              >
+                [{showConfirmModal.type === 'revoke' ? 'REVOKE' : 'REGENERATE'}]
+              </button>
+              <button
+                onClick={() => setShowConfirmModal(null)}
+                className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 border-2 border-gray-400 font-bold transition-all"
+              >
+                [CANCEL]
               </button>
             </div>
           </div>

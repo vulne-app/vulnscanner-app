@@ -1,14 +1,52 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function ScanResultsPage() {
   const params = useParams();
+  const router = useRouter();
   const scanId = params.scanId as string;
 
   const [openAccordions, setOpenAccordions] = useState<string[]>(['ports']);
+  const [scan, setScan] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load scan data from API
+  useEffect(() => {
+    const loadScan = async () => {
+      try {
+        const response = await fetch(`/api/scan/${scanId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setScan(data);
+        } else {
+          alert('Scan not found');
+          router.push('/dashboard');
+        }
+      } catch (error) {
+        console.error('Failed to load scan:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadScan();
+
+    // Poll for updates if scan is running
+    const interval = setInterval(async () => {
+      if (scan?.status === 'running' || scan?.status === 'pending') {
+        const response = await fetch(`/api/scan/${scanId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setScan(data);
+        }
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [scanId, router, scan?.status]);
 
   const toggleAccordion = (id: string) => {
     setOpenAccordions(prev =>
@@ -16,19 +54,55 @@ export default function ScanResultsPage() {
     );
   };
 
-  // Mock data
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="terminal-border bg-black/90 backdrop-blur p-8 text-center">
+          <div className="text-purple-400 text-4xl mb-4 animate-pulse">[*]</div>
+          <div className="text-lg glow-purple">LOADING SCAN...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!scan) return null;
+
+  // Parse results if string
+  const results = scan.results ? (typeof scan.results === 'string' ? JSON.parse(scan.results) : scan.results) : null;
+
+  // Calculate vulnerability counts
+  let vulnCounts = { high: 0, medium: 0, low: 0 };
+  if (results?.vulnerabilities) {
+    results.vulnerabilities.forEach((v: any) => {
+      const sev = (v.severity || '').toLowerCase();
+      if (sev === 'high' || sev === 'critical') vulnCounts.high++;
+      else if (sev === 'medium') vulnCounts.medium++;
+      else vulnCounts.low++;
+    });
+  }
+
+  // Calculate security score (100 - penalty for vulns)
+  const securityScore = Math.max(0, 100 - (vulnCounts.high * 20) - (vulnCounts.medium * 10) - (vulnCounts.low * 5));
+
+  // Determine risk level
+  const riskLevel = vulnCounts.high > 0 ? 'high' : vulnCounts.medium > 0 ? 'medium' : vulnCounts.low > 0 ? 'low' : 'secure';
+
+  // Format date
+  const formattedDate = new Date(scan.started_at).toLocaleString();
+
+  // Calculate duration if completed
+  const duration = scan.completed_at ?
+    `${Math.round((scan.completed_at - scan.started_at) / 1000)}s` :
+    'In progress';
+
   const scanData = {
-    url: 'https://example.com',
-    date: 'Nov 19, 2025 - 14:32',
-    duration: '2m 34s',
-    status: 'completed',
-    securityScore: 45,
-    riskLevel: 'high',
-    vulnerabilities: {
-      high: 3,
-      medium: 5,
-      low: 2,
-    },
+    url: scan.target,
+    date: formattedDate,
+    duration,
+    status: scan.status,
+    securityScore,
+    riskLevel,
+    vulnerabilities: vulnCounts,
   };
 
   const riskConfig = {

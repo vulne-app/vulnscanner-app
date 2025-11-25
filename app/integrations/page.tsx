@@ -1,502 +1,460 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-// Mock integrations data
-const AVAILABLE_INTEGRATIONS = [
-  {
-    id: 'slack',
-    name: 'Slack',
-    icon: '[S]',
-    description: 'Get scan notifications and alerts in your Slack channels',
-    category: 'Communication',
-    connected: true,
-    config: {
-      workspace: 'TEKTON Security',
-      channel: '#security-alerts'
+interface GitHubConfig {
+  login: string;
+  name: string;
+  avatar_url: string;
+  html_url: string;
+  public_repos: number;
+  followers: number;
+  following: number;
+  selected_repos: string[];
+}
+
+interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  html_url: string;
+  private: boolean;
+  language: string | null;
+  stargazers_count: number;
+  forks_count: number;
+  updated_at: string;
+  default_branch: string;
+}
+
+interface Integration {
+  integration_id: string;
+  service: string;
+  config: GitHubConfig;
+  status: string;
+  created_at: number;
+}
+
+function IntegrationsContent() {
+  const searchParams = useSearchParams();
+  const [githubIntegration, setGithubIntegration] = useState<Integration | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Repos state
+  const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
+  const [showReposModal, setShowReposModal] = useState(false);
+  const [reposLoading, setReposLoading] = useState(false);
+  const [repoFilter, setRepoFilter] = useState('');
+
+  // Check for success/error params
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success === 'github_connected') {
+      // Reload data after successful connection
+      loadData();
     }
-  },
-  {
-    id: 'discord',
-    name: 'Discord',
-    icon: '[D]',
-    description: 'Receive real-time scan updates in your Discord server',
-    category: 'Communication',
-    connected: true,
-    config: {
-      server: 'TEKTON Security',
-      channel: '#scan-results'
+
+    if (error) {
+      alert(`GitHub connection error: ${error}`);
     }
-  },
-  {
-    id: 'github',
-    name: 'GitHub',
-    icon: '[G]',
-    description: 'Automatically create issues when vulnerabilities are found',
-    category: 'Development',
-    connected: false,
-    config: null
-  },
-  {
-    id: 'gitlab',
-    name: 'GitLab',
-    icon: '[GL]',
-    description: 'Integrate scans into your GitLab CI/CD pipelines',
-    category: 'Development',
-    connected: false,
-    config: null
-  },
-  {
-    id: 'jira',
-    name: 'Jira',
-    icon: '[J]',
-    description: 'Create tickets for security issues automatically',
-    category: 'Project Management',
-    connected: false,
-    config: null
-  },
-  {
-    id: 'jenkins',
-    name: 'Jenkins',
-    icon: '[JK]',
-    description: 'Run security scans as part of your Jenkins builds',
-    category: 'CI/CD',
-    connected: false,
-    config: null
-  },
-  {
-    id: 'circleci',
-    name: 'CircleCI',
-    icon: '[CI]',
-    description: 'Add TEKTON scans to your CircleCI workflows',
-    category: 'CI/CD',
-    connected: false,
-    config: null
-  },
-  {
-    id: 'webhooks',
-    name: 'Webhooks',
-    icon: '[W]',
-    description: 'Send scan events to custom endpoints',
-    category: 'Custom',
-    connected: true,
-    config: {
-      endpoints: 2
+  }, [searchParams]);
+
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const response = await fetch('/api/integrations');
+      if (response.ok) {
+        const data = await response.json();
+        const github = data.integrations?.find((i: any) => i.service === 'github');
+        if (github) {
+          // Parse config if string
+          if (typeof github.config === 'string') {
+            github.config = JSON.parse(github.config);
+          }
+          setGithubIntegration(github);
+          setSelectedRepos(github.config.selected_repos || []);
+        } else {
+          setGithubIntegration(null);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load integrations:', error);
+    } finally {
+      setLoading(false);
     }
-  }
-];
-
-const WEBHOOK_ENDPOINTS = [
-  {
-    id: '1',
-    name: 'Production Alerts',
-    url: 'https://api.myapp.com/tekton/webhooks',
-    events: ['scan.completed', 'vulnerability.critical'],
-    status: 'active',
-    lastTriggered: '2 hours ago'
-  },
-  {
-    id: '2',
-    name: 'Slack Custom Integration',
-    url: 'https://hooks.slack.com/services/T00/B00/XXX',
-    events: ['scan.completed', 'scan.failed'],
-    status: 'active',
-    lastTriggered: '1 day ago'
-  }
-];
-
-const AVAILABLE_EVENTS = [
-  'scan.started',
-  'scan.completed',
-  'scan.failed',
-  'vulnerability.critical',
-  'vulnerability.high',
-  'vulnerability.medium',
-  'vulnerability.low',
-  'tokens.low',
-  'tokens.depleted'
-];
-
-export default function IntegrationsPage() {
-  const [filter, setFilter] = useState<'all' | 'connected' | 'available'>('all');
-  const [showWebhookModal, setShowWebhookModal] = useState(false);
-  const [showConnectModal, setShowConnectModal] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
-
-  const filteredIntegrations = AVAILABLE_INTEGRATIONS.filter(integration => {
-    if (filter === 'connected') return integration.connected;
-    if (filter === 'available') return !integration.connected;
-    return true;
-  });
-
-  const connectedCount = AVAILABLE_INTEGRATIONS.filter(i => i.connected).length;
-
-  const handleConnect = (integrationId: string) => {
-    setSelectedIntegration(integrationId);
-    setShowConnectModal(true);
   };
+
+  const handleConnectGitHub = () => {
+    // Redirect to GitHub OAuth
+    window.location.href = '/api/github/auth';
+  };
+
+  const handleDisconnectGitHub = async () => {
+    if (!confirm('Are you sure you want to disconnect GitHub?')) return;
+
+    setActionLoading('disconnect');
+    try {
+      const response = await fetch('/api/github/disconnect', { method: 'POST' });
+      if (response.ok) {
+        setGithubIntegration(null);
+        setSelectedRepos([]);
+        setRepos([]);
+      } else {
+        alert('Failed to disconnect GitHub');
+      }
+    } catch (error) {
+      console.error('Failed to disconnect:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleOpenRepos = async () => {
+    setShowReposModal(true);
+    setReposLoading(true);
+
+    try {
+      const response = await fetch('/api/github/repos');
+      if (response.ok) {
+        const data = await response.json();
+        setRepos(data.repos || []);
+        setSelectedRepos(data.selected_repos || []);
+      } else {
+        alert('Failed to load repositories');
+      }
+    } catch (error) {
+      console.error('Failed to load repos:', error);
+    } finally {
+      setReposLoading(false);
+    }
+  };
+
+  const handleToggleRepo = (fullName: string) => {
+    setSelectedRepos(prev =>
+      prev.includes(fullName)
+        ? prev.filter(r => r !== fullName)
+        : [...prev, fullName]
+    );
+  };
+
+  const handleSaveRepos = async () => {
+    setActionLoading('save-repos');
+    try {
+      const response = await fetch('/api/github/repos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selected_repos: selectedRepos })
+      });
+
+      if (response.ok) {
+        setShowReposModal(false);
+        loadData(); // Reload to get updated config
+      } else {
+        alert('Failed to save repositories');
+      }
+    } catch (error) {
+      console.error('Failed to save repos:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const filteredRepos = repos.filter(repo =>
+    repo.name.toLowerCase().includes(repoFilter.toLowerCase()) ||
+    repo.full_name.toLowerCase().includes(repoFilter.toLowerCase())
+  );
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="terminal-border bg-black/90 backdrop-blur p-8 text-center">
+          <div className="text-purple-400 text-4xl mb-4 animate-pulse">[*]</div>
+          <div className="text-lg glow-purple">LOADING...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl font-bold mb-4 glow-title">[INTEGRATIONS]</h1>
-          <p className="text-xl opacity-70 mb-2">Connect TEKTON with your favorite tools and platforms</p>
-          <p className="text-sm opacity-50">Automate your security workflow with powerful integrations</p>
+          <h1 className="text-5xl font-bold mb-4 glow-title">[GITHUB INTEGRATION]</h1>
+          <p className="text-xl opacity-70 mb-2">Connect your GitHub account to TEKTON</p>
+          <p className="text-sm opacity-50">Automatically create issues when vulnerabilities are found</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="terminal-border bg-black/80 backdrop-blur p-6">
-            <div className="text-xs opacity-50 mb-2">CONNECTED</div>
-            <div className="text-4xl font-bold text-green-400">{connectedCount}</div>
-          </div>
-          <div className="terminal-border bg-black/80 backdrop-blur p-6">
-            <div className="text-xs opacity-50 mb-2">AVAILABLE</div>
-            <div className="text-4xl font-bold text-purple-400">{AVAILABLE_INTEGRATIONS.length}</div>
-          </div>
-          <div className="terminal-border bg-black/80 backdrop-blur p-6">
-            <div className="text-xs opacity-50 mb-2">WEBHOOKS ACTIVE</div>
-            <div className="text-4xl font-bold text-yellow-400">{WEBHOOK_ENDPOINTS.length}</div>
-          </div>
-        </div>
-
-        {/* Filter */}
-        <div className="terminal-border bg-black/80 backdrop-blur p-4 mb-8">
-          <div className="flex gap-2">
-            {(['all', 'connected', 'available'] as const).map((filterOption) => (
-              <button
-                key={filterOption}
-                onClick={() => setFilter(filterOption)}
-                className={`flex-1 py-2 font-bold transition-all ${
-                  filter === filterOption
-                    ? 'bg-purple-600 border-2 border-purple-400'
-                    : 'bg-black border-2 border-purple-600 hover:border-purple-400'
-                }`}
-              >
-                [{filterOption.toUpperCase()}]
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Integrations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {filteredIntegrations.map((integration) => (
-            <div
-              key={integration.id}
-              className={`terminal-border p-6 transition-all ${
-                integration.connected
-                  ? 'bg-green-900/20 hover:bg-green-900/30'
-                  : 'bg-black/80 backdrop-blur hover:bg-purple-900/20'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-4xl">{integration.icon}</span>
+        {/* GitHub Connection Card */}
+        <div className="terminal-border bg-black/80 backdrop-blur mb-8">
+          {githubIntegration ? (
+            // Connected State
+            <div className="p-8">
+              {/* Profile Header */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-6">
+                  <img
+                    src={githubIntegration.config.avatar_url}
+                    alt={githubIntegration.config.login}
+                    className="w-24 h-24 rounded-full border-4 border-purple-600"
+                  />
                   <div>
-                    <h3 className="text-xl font-bold glow-accent">{integration.name}</h3>
-                    <div className="text-xs opacity-50">{integration.category}</div>
+                    <h2 className="text-3xl font-bold glow-purple">{githubIntegration.config.name || githubIntegration.config.login}</h2>
+                    <a
+                      href={githubIntegration.config.html_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-400 hover:text-purple-300 transition-colors"
+                    >
+                      @{githubIntegration.config.login}
+                    </a>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs px-3 py-1 bg-green-600 border border-green-400 font-bold">
+                        CONNECTED
+                      </span>
+                    </div>
                   </div>
                 </div>
-                {integration.connected && (
-                  <span className="text-xs px-2 py-1 bg-green-600 border border-green-400 font-bold">
-                    ACTIVE
-                  </span>
-                )}
+                <button
+                  onClick={handleDisconnectGitHub}
+                  disabled={actionLoading === 'disconnect'}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 border-2 border-red-400 font-bold transition-all disabled:opacity-50"
+                >
+                  {actionLoading === 'disconnect' ? '[...]' : '[DISCONNECT]'}
+                </button>
               </div>
 
-              <p className="text-sm opacity-70 mb-4">{integration.description}</p>
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                <div className="terminal-border bg-purple-900/20 p-4 text-center">
+                  <div className="text-3xl font-bold text-purple-400">{githubIntegration.config.public_repos}</div>
+                  <div className="text-xs opacity-50">PUBLIC REPOS</div>
+                </div>
+                <div className="terminal-border bg-purple-900/20 p-4 text-center">
+                  <div className="text-3xl font-bold text-purple-400">{githubIntegration.config.followers}</div>
+                  <div className="text-xs opacity-50">FOLLOWERS</div>
+                </div>
+                <div className="terminal-border bg-purple-900/20 p-4 text-center">
+                  <div className="text-3xl font-bold text-purple-400">{githubIntegration.config.following}</div>
+                  <div className="text-xs opacity-50">FOLLOWING</div>
+                </div>
+              </div>
 
-              {integration.connected && integration.config && (
-                <div className="mb-4 p-3 bg-black/50 border border-purple-600">
-                  <div className="text-xs space-y-1">
-                    {Object.entries(integration.config).map(([key, value]) => (
-                      <div key={key}>
-                        <span className="opacity-50">{key}:</span>{' '}
-                        <span className="text-purple-400">{value}</span>
+              {/* Selected Repos Section */}
+              <div className="terminal-border bg-black/50 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold glow-accent">SELECTED REPOSITORIES</h3>
+                  <button
+                    onClick={handleOpenRepos}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all"
+                  >
+                    [SELECT REPOS]
+                  </button>
+                </div>
+
+                {selectedRepos.length === 0 ? (
+                  <div className="text-center py-8 opacity-50">
+                    <div className="text-4xl mb-4">[#]</div>
+                    <div>No repositories selected yet.</div>
+                    <div className="text-sm mt-2">Click "SELECT REPOS" to choose which repos to monitor.</div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedRepos.map((repoName) => (
+                      <div
+                        key={repoName}
+                        className="flex items-center justify-between p-3 bg-purple-900/20 border border-purple-600"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-purple-400">[R]</span>
+                          <span className="font-mono">{repoName}</span>
+                        </div>
+                        <a
+                          href={`https://github.com/${repoName}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-purple-400 hover:text-purple-300"
+                        >
+                          [VIEW]
+                        </a>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                {integration.connected ? (
-                  <>
-                    <button className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-500 border border-yellow-400 font-bold text-xs transition-all">
-                      [CONFIGURE]
-                    </button>
-                    <button className="flex-1 py-2 bg-red-600 hover:bg-red-500 border border-red-400 font-bold text-xs transition-all">
-                      [DISCONNECT]
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => handleConnect(integration.id)}
-                    className="w-full py-2 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold text-sm transition-all"
-                  >
-                    [CONNECT]
-                  </button>
                 )}
               </div>
             </div>
-          ))}
-        </div>
+          ) : (
+            // Not Connected State
+            <div className="p-8 text-center">
+              <div className="text-6xl mb-6">[G]</div>
+              <h2 className="text-2xl font-bold mb-4 glow-purple">GitHub</h2>
+              <p className="text-lg opacity-70 mb-6">
+                Connect your GitHub account to automatically create issues<br />
+                when vulnerabilities are found in your scans.
+              </p>
 
-        {/* Webhooks Section */}
-        <div className="terminal-border bg-black/80 backdrop-blur mb-8">
-          <div className="bg-purple-900/30 px-6 py-4 border-b-2 border-purple-600 flex justify-between items-center">
-            <h2 className="text-2xl font-bold glow-header">WEBHOOK ENDPOINTS</h2>
-            <button
-              onClick={() => setShowWebhookModal(true)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all"
-            >
-              [+ ADD WEBHOOK]
-            </button>
-          </div>
-
-          <div className="p-6 space-y-4">
-            {WEBHOOK_ENDPOINTS.map((webhook) => (
-              <div key={webhook.id} className="terminal-border bg-purple-900/10 p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold glow-accent">{webhook.name}</h3>
-                      <span className={`text-xs px-3 py-1 font-bold ${
-                        webhook.status === 'active'
-                          ? 'bg-green-600 border border-green-400'
-                          : 'bg-gray-600 border border-gray-400'
-                      }`}>
-                        {webhook.status.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="font-mono text-sm opacity-70 mb-2">{webhook.url}</div>
-                    <div className="text-xs opacity-50">Last triggered: {webhook.lastTriggered}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="px-3 py-2 bg-purple-600 hover:bg-purple-500 border border-purple-400 font-bold text-xs transition-all">
-                      [TEST]
-                    </button>
-                    <button className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 border border-yellow-400 font-bold text-xs transition-all">
-                      [EDIT]
-                    </button>
-                    <button className="px-3 py-2 bg-red-600 hover:bg-red-500 border border-red-400 font-bold text-xs transition-all">
-                      [DELETE]
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-purple-600">
-                  <div className="text-xs opacity-50 mb-2">SUBSCRIBED EVENTS:</div>
-                  <div className="flex flex-wrap gap-2">
-                    {webhook.events.map((event) => (
-                      <span
-                        key={event}
-                        className="text-xs px-2 py-1 bg-purple-600/30 border border-purple-600 font-mono"
-                      >
-                        {event}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              <div className="terminal-border bg-purple-900/20 p-6 mb-8 text-left max-w-md mx-auto">
+                <h3 className="text-lg font-bold mb-4 text-purple-400">FEATURES:</h3>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-400">[+]</span>
+                    <span>View your GitHub profile</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-400">[+]</span>
+                    <span>Select repositories to monitor</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-400">[+]</span>
+                    <span>Auto-create issues for vulnerabilities</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-400">[+]</span>
+                    <span>Link scan results to your repos</span>
+                  </li>
+                </ul>
               </div>
-            ))}
-          </div>
+
+              <button
+                onClick={handleConnectGitHub}
+                className="px-8 py-4 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold text-xl transition-all"
+              >
+                [CONNECT GITHUB]
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* CI/CD Integration Guide */}
-        <div className="terminal-border bg-black/80 backdrop-blur">
-          <div className="bg-purple-900/30 px-6 py-4 border-b-2 border-purple-600">
-            <h2 className="text-2xl font-bold glow-header">CI/CD INTEGRATION EXAMPLE</h2>
-          </div>
-
-          <div className="p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-purple-400 mb-2">GitHub Actions</h3>
-              <pre className="bg-black border-2 border-purple-600 p-4 overflow-x-auto font-mono text-sm text-green-400">
-{`name: TEKTON Security Scan
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Run TEKTON scan
-        run: |
-          curl -X POST https://api.tekton.io/v1/scan \\
-            -H "Authorization: Bearer \${{ secrets.TEKTON_API_KEY }}" \\
-            -H "Content-Type: application/json" \\
-            -d '{
-              "url": "https://staging.myapp.com",
-              "scan_types": ["port", "xss", "sqli"],
-              "notify": true
-            }'`}
-              </pre>
+        {/* How it works */}
+        <div className="terminal-border bg-black/80 backdrop-blur p-6">
+          <h3 className="text-xl font-bold mb-4 glow-header">HOW IT WORKS</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-3xl mb-2 text-purple-400">1.</div>
+              <div className="font-bold mb-1">CONNECT</div>
+              <div className="text-sm opacity-70">Authorize TEKTON to access your GitHub</div>
             </div>
-
-            <div className="mt-6">
-              <h3 className="text-lg font-bold text-purple-400 mb-2">GitLab CI/CD</h3>
-              <pre className="bg-black border-2 border-purple-600 p-4 overflow-x-auto font-mono text-sm text-green-400">
-{`security_scan:
-  stage: security
-  script:
-    - curl -X POST https://api.tekton.io/v1/scan
-      -H "Authorization: Bearer $TEKTON_API_KEY"
-      -H "Content-Type: application/json"
-      -d '{
-        "url": "https://staging.myapp.com",
-        "scan_types": ["port", "xss", "sqli"],
-        "notify": true
-      }'
-  only:
-    - main
-    - develop`}
-              </pre>
+            <div className="text-center">
+              <div className="text-3xl mb-2 text-purple-400">2.</div>
+              <div className="font-bold mb-1">SELECT</div>
+              <div className="text-sm opacity-70">Choose which repos to monitor</div>
             </div>
-          </div>
-        </div>
-
-        {/* Benefits Section */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="terminal-border bg-purple-900/20 backdrop-blur p-6">
-            <div className="text-3xl mb-3">⚡</div>
-            <h3 className="text-lg font-bold mb-2 glow-accent">AUTOMATION</h3>
-            <p className="text-sm opacity-70">
-              Automate security scans in your CI/CD pipeline and get instant feedback
-            </p>
-          </div>
-          <div className="terminal-border bg-purple-900/20 backdrop-blur p-6">
-            <div className="text-3xl mb-3">🔔</div>
-            <h3 className="text-lg font-bold mb-2 glow-accent">REAL-TIME ALERTS</h3>
-            <p className="text-sm opacity-70">
-              Get notified immediately when critical vulnerabilities are detected
-            </p>
-          </div>
-          <div className="terminal-border bg-purple-900/20 backdrop-blur p-6">
-            <div className="text-3xl mb-3">🔗</div>
-            <h3 className="text-lg font-bold mb-2 glow-accent">SEAMLESS WORKFLOW</h3>
-            <p className="text-sm opacity-70">
-              Integrate security into your existing tools and processes effortlessly
-            </p>
+            <div className="text-center">
+              <div className="text-3xl mb-2 text-purple-400">3.</div>
+              <div className="font-bold mb-1">SCAN</div>
+              <div className="text-sm opacity-70">Issues are created automatically</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Add Webhook Modal */}
-      {showWebhookModal && (
+      {/* Select Repos Modal */}
+      {showReposModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur flex items-center justify-center z-50 p-4">
-          <div className="terminal-border-strong bg-black p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-3xl font-bold mb-6 glow-header">[CREATE WEBHOOK]</h2>
+          <div className="terminal-border-strong bg-black p-8 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <h2 className="text-3xl font-bold mb-6 glow-header">[SELECT REPOSITORIES]</h2>
 
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm opacity-50 mb-2">WEBHOOK NAME</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Production Alerts"
-                  className="w-full bg-black border-2 border-purple-600 px-4 py-3 font-mono focus:outline-none focus:border-purple-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm opacity-50 mb-2">ENDPOINT URL</label>
-                <input
-                  type="url"
-                  placeholder="https://your-api.com/webhooks/tekton"
-                  className="w-full bg-black border-2 border-purple-600 px-4 py-3 font-mono focus:outline-none focus:border-purple-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm opacity-50 mb-2">SELECT EVENTS</label>
-                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 bg-black/50 border border-purple-600">
-                  {AVAILABLE_EVENTS.map((event) => (
-                    <label key={event} className="flex items-center gap-2 p-2 hover:bg-purple-900/20 cursor-pointer">
-                      <input type="checkbox" className="w-4 h-4" />
-                      <span className="text-xs font-mono">{event}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm opacity-50 mb-2">SECRET (OPTIONAL)</label>
-                <input
-                  type="password"
-                  placeholder="Webhook signing secret"
-                  className="w-full bg-black border-2 border-purple-600 px-4 py-3 font-mono focus:outline-none focus:border-purple-400"
-                />
-                <div className="text-xs opacity-50 mt-1">
-                  Used to verify webhook authenticity
-                </div>
-              </div>
+            {/* Search */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={repoFilter}
+                onChange={(e) => setRepoFilter(e.target.value)}
+                placeholder="Search repositories..."
+                className="w-full bg-black border-2 border-purple-600 px-4 py-3 font-mono focus:outline-none focus:border-purple-400"
+              />
             </div>
 
+            {/* Selected count */}
+            <div className="mb-4 text-sm">
+              <span className="text-purple-400 font-bold">{selectedRepos.length}</span>
+              <span className="opacity-50"> repositories selected</span>
+            </div>
+
+            {/* Repos List */}
+            <div className="flex-1 overflow-y-auto mb-6 space-y-2">
+              {reposLoading ? (
+                <div className="text-center py-12">
+                  <div className="text-purple-400 text-4xl mb-4 animate-pulse">[*]</div>
+                  <div>Loading repositories...</div>
+                </div>
+              ) : filteredRepos.length === 0 ? (
+                <div className="text-center py-12 opacity-50">
+                  <div>No repositories found</div>
+                </div>
+              ) : (
+                filteredRepos.map((repo) => (
+                  <div
+                    key={repo.id}
+                    onClick={() => handleToggleRepo(repo.full_name)}
+                    className={`p-4 cursor-pointer transition-all border-2 ${
+                      selectedRepos.includes(repo.full_name)
+                        ? 'bg-purple-900/30 border-purple-400'
+                        : 'bg-black/50 border-purple-600 hover:border-purple-400'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className={`text-lg ${selectedRepos.includes(repo.full_name) ? 'text-green-400' : 'text-gray-500'}`}>
+                            {selectedRepos.includes(repo.full_name) ? '[✓]' : '[ ]'}
+                          </span>
+                          <span className="font-bold glow-accent">{repo.name}</span>
+                          {repo.private && (
+                            <span className="text-xs px-2 py-0.5 bg-yellow-600 border border-yellow-400">
+                              PRIVATE
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs opacity-50 ml-8">{repo.full_name}</div>
+                        {repo.description && (
+                          <div className="text-sm opacity-70 ml-8 mt-1">{repo.description}</div>
+                        )}
+                      </div>
+                      <div className="text-right text-xs opacity-50">
+                        <div className="flex items-center gap-4 mb-1">
+                          {repo.language && (
+                            <span className="text-purple-400">{repo.language}</span>
+                          )}
+                          <span>* {repo.stargazers_count}</span>
+                        </div>
+                        <div>Updated {formatDate(repo.updated_at)}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Actions */}
             <div className="flex gap-4">
-              <button className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all">
-                [CREATE WEBHOOK]
-              </button>
               <button
-                onClick={() => setShowWebhookModal(false)}
-                className="flex-1 py-3 bg-red-600 hover:bg-red-500 border-2 border-red-400 font-bold transition-all"
+                onClick={handleSaveRepos}
+                disabled={actionLoading === 'save-repos'}
+                className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all disabled:opacity-50"
               >
-                [CANCEL]
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Connect Integration Modal */}
-      {showConnectModal && selectedIntegration && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur flex items-center justify-center z-50 p-4">
-          <div className="terminal-border-strong bg-black p-8 max-w-md w-full">
-            <h2 className="text-3xl font-bold mb-6 glow-header">
-              [CONNECT {AVAILABLE_INTEGRATIONS.find(i => i.id === selectedIntegration)?.name.toUpperCase()}]
-            </h2>
-
-            <div className="mb-6 terminal-border bg-purple-900/20 p-4">
-              <div className="text-sm opacity-70">
-                You will be redirected to authorize TEKTON to access your{' '}
-                {AVAILABLE_INTEGRATIONS.find(i => i.id === selectedIntegration)?.name} account.
-              </div>
-            </div>
-
-            <div className="mb-6 space-y-3 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-green-400">✓</span>
-                <span>Read and write access</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-green-400">✓</span>
-                <span>Send notifications</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-green-400">✓</span>
-                <span>Create issues/tickets</span>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all">
-                [AUTHORIZE]
+                {actionLoading === 'save-repos' ? '[SAVING...]' : `[SAVE ${selectedRepos.length} REPOS]`}
               </button>
               <button
-                onClick={() => {
-                  setShowConnectModal(false);
-                  setSelectedIntegration(null);
-                }}
-                className="flex-1 py-3 bg-red-600 hover:bg-red-500 border-2 border-red-400 font-bold transition-all"
+                onClick={() => setShowReposModal(false)}
+                className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 border-2 border-gray-400 font-bold transition-all"
               >
                 [CANCEL]
               </button>
@@ -505,5 +463,20 @@ jobs:
         </div>
       )}
     </div>
+  );
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="terminal-border bg-black/90 backdrop-blur p-8 text-center">
+          <div className="text-purple-400 text-4xl mb-4 animate-pulse">[*]</div>
+          <div className="text-lg glow-purple">LOADING...</div>
+        </div>
+      </div>
+    }>
+      <IntegrationsContent />
+    </Suspense>
   );
 }

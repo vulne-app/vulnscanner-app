@@ -15,7 +15,8 @@ export default function DashboardPage() {
     plan: 'FREE',
     stats: {
       total_scans: 0,
-      completed_scans: 0
+      completed_scans: 0,
+      tokens_spent: 0
     }
   });
 
@@ -39,14 +40,19 @@ export default function DashboardPage() {
           plan: data.plan || 'FREE',
           stats: data.stats || {
             total_scans: 0,
-            completed_scans: 0
+            completed_scans: 0,
+            tokens_spent: 0
           }
         });
       }
 
-      // Load recent scans (mock for now, will use real API later)
-      // TODO: Add /api/scans endpoint
-      setRecentScans([]);
+      // Load recent scans
+      const scansRes = await fetch('/api/scan');
+      if (scansRes.ok) {
+        const scans = await scansRes.json();
+        // Get the 5 most recent scans
+        setRecentScans(scans.slice(0, 5));
+      }
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -54,8 +60,6 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
-
-  const tokensLimit = userData.plan === 'PRO' ? 500 : userData.plan === 'PREMIUM' ? 1000 : 100;
 
   return (
     <div className="min-h-screen p-8">
@@ -91,8 +95,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-2">
               <TokenDisplay
                 current={userData.tokens}
-                limit={tokensLimit}
-                showProgress={true}
+                showProgress={false}
               />
               <div className="mt-4 flex gap-4">
                 <Link
@@ -145,7 +148,7 @@ export default function DashboardPage() {
             <div className="terminal-border bg-black/80 backdrop-blur p-6 text-center">
               <div className="text-5xl font-bold text-purple-400 mb-2">{userData.tokens}</div>
               <div className="text-sm opacity-50">AVAILABLE TOKENS</div>
-              <div className="text-xs text-green-400 mt-1">{tokensLimit - userData.tokens} used</div>
+              <div className="text-xs text-red-400 mt-1">{userData.stats.tokens_spent || 0} spent</div>
             </div>
           </div>
 
@@ -174,8 +177,8 @@ export default function DashboardPage() {
 
           <div className="space-y-4">
             {recentScans.length > 0 ? (
-              recentScans.map((scan) => (
-                <ScanHistoryItem key={scan.id} {...scan} />
+              recentScans.map((scan, index) => (
+                <ScanHistoryItem key={scan.scanId || scan.scan_id || index} {...scan} />
               ))
             ) : (
               <div className="terminal-border bg-black/80 backdrop-blur p-8 text-center">
@@ -213,11 +216,11 @@ export default function DashboardPage() {
             <div className="flex gap-4">
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-400">{userData.tokens}</div>
-                <div className="text-xs opacity-50">tokens left</div>
+                <div className="text-xs opacity-50">tokens available</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-400">{tokensLimit - userData.tokens}</div>
-                <div className="text-xs opacity-50">tokens used</div>
+                <div className="text-3xl font-bold text-red-400">{userData.stats.tokens_spent || 0}</div>
+                <div className="text-xs opacity-50">tokens spent</div>
               </div>
             </div>
           </div>

@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    setSessionCookie(response, sessionId);
+    // Pass userId for persistent cookie (survives hot reload)
+    setSessionCookie(response, sessionId, user.user_id);
 
     return response;
 

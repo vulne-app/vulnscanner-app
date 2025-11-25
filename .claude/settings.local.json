@@ -17,7 +17,10 @@
       "Bash(if [ -f .next/dev/lock ])",
       "Bash(then rm .next/dev/lock)",
       "Bash(else echo \"No lock file found\")",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(cd:*)",
+      "Bash(node:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

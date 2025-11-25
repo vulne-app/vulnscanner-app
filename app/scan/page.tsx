@@ -182,7 +182,7 @@ export default function ScanPage() {
       const response = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, cost: totalCost }),
       });
 
       const { scanId } = await response.json();

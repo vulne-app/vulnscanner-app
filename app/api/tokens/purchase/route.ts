@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createTokenPurchase, getUser } from '@/app/lib/db';
-
-const DEFAULT_USER_ID = 'default_user';
+import { getUserFromSession } from '@/app/lib/auth';
 
 /**
  * POST /api/tokens/purchase
@@ -9,43 +8,52 @@ const DEFAULT_USER_ID = 'default_user';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { package_id } = body;
+    // Get authenticated user
+    const userId = await getUserFromSession();
 
-    // Define token packages
-    const packages: any = {
-      'starter': { tokens: 100, price: 9.99 },
-      'pro': { tokens: 500, price: 39.99 },
-      'business': { tokens: 1500, price: 99.99 },
-      'enterprise': { tokens: 5000, price: 299.99 }
-    };
-
-    if (!package_id || !packages[package_id]) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Invalid package_id' },
+        { error: 'Unauthorized. Please login first.' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { tokens, price, paymentMethod } = body;
+
+    // Validate input
+    if (!tokens || !price || tokens <= 0 || price <= 0) {
+      return NextResponse.json(
+        { error: 'Invalid tokens or price' },
         { status: 400 }
       );
     }
 
-    const pkg = packages[package_id];
-
-    // Simulate purchase (in real app, this would call Stripe)
+    // Simulate purchase (in real app, this would call payment gateway)
     const purchaseId = createTokenPurchase(
-      DEFAULT_USER_ID,
-      1, // amount of packages
-      pkg.tokens,
-      pkg.price,
-      'simulated'
+      userId,
+      1, // quantity (always 1 pack)
+      tokens,
+      parseFloat(price),
+      paymentMethod || 'demo'
     );
 
-    const user = getUser(DEFAULT_USER_ID) as any;
+    // Get updated user data
+    const user = getUser(userId) as any;
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       purchase_id: purchaseId,
-      tokens_added: pkg.tokens,
+      tokens_added: tokens,
       new_balance: user.tokens,
-      message: `Successfully purchased ${pkg.tokens} tokens!`
+      message: `Successfully purchased ${tokens} tokens!`
     });
 
   } catch (error) {

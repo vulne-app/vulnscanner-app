@@ -97,6 +97,11 @@ export async function GET() {
     monthStart.setHours(0, 0, 0, 0);
     const scansThisMonth = scans.filter((s: any) => s.started_at >= monthStart.getTime()).length;
 
+    // Calculate total tokens spent from all scans
+    const tokensSpent = scans.reduce((total: number, scan: any) => {
+      return total + (scan.cost || 0);
+    }, 0);
+
     return NextResponse.json({
       user_id: user.user_id,
       username: user.username,
@@ -113,6 +118,7 @@ export async function GET() {
       stats: {
         total_scans: scans.length,
         completed_scans: completedScans.length,
+        tokens_spent: tokensSpent,
         vulns_found: totalVulns,
         avg_scan_time: avgScanTime,
         scans_this_month: scansThisMonth,

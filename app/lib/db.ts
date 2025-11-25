@@ -213,12 +213,12 @@ if (!columnExists('users', 'two_factor_enabled')) {
   db.exec(`ALTER TABLE users ADD COLUMN two_factor_enabled INTEGER DEFAULT 0`);
 }
 
-export function createScan(scanId: string, target: string, userId: string = 'default_user'): void {
+export function createScan(scanId: string, target: string, userId: string = 'default_user', cost: number = 0): void {
   const stmt = db.prepare(`
-    INSERT INTO scans (scan_id, user_id, target, status, started_at, progress)
-    VALUES (?, ?, ?, 'pending', ?, 0)
+    INSERT INTO scans (scan_id, user_id, target, status, started_at, progress, cost)
+    VALUES (?, ?, ?, 'pending', ?, 0, ?)
   `);
-  stmt.run(scanId, userId, target, Date.now());
+  stmt.run(scanId, userId, target, Date.now(), cost);
 }
 
 export function updateScan(scanId: string, updates: Partial<ScanResult>): void {
@@ -277,7 +277,7 @@ export function getScan(scanId: string): ScanResult | null {
   };
 }
 
-export function getAllScans(userId: string = 'default_user'): ScanResult[] {
+export function getAllScans(userId: string = 'default_user'): any[] {
   const stmt = db.prepare('SELECT * FROM scans WHERE user_id = ? ORDER BY started_at DESC LIMIT 50');
   const rows = stmt.all(userId) as any[];
 
@@ -291,6 +291,7 @@ export function getAllScans(userId: string = 'default_user'): ScanResult[] {
     currentStep: row.current_step,
     results: row.results ? JSON.parse(row.results) : {},
     error: row.error,
+    cost: row.cost || 0,
   }));
 }
 

@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     const scanId = nanoid(10);
 
     // Lancer le scan en arrière-plan (non-bloquant)
-    executeScan(scanId, url, userId).catch(console.error);
+    executeScan(scanId, url, userId, cost).catch(console.error);
 
     // Retourner immédiatement l'ID du scan
     return NextResponse.json({
@@ -106,7 +106,22 @@ export async function GET() {
     }
 
     const scans = getAllScans(userId);
-    return NextResponse.json(scans);
+
+    // Transform to consistent format for frontend
+    const formattedScans = scans.map((scan: any) => ({
+      scan_id: scan.scanId,
+      target: scan.target,
+      status: scan.status,
+      started_at: scan.startedAt instanceof Date ? scan.startedAt.getTime() : scan.startedAt,
+      completed_at: scan.completedAt instanceof Date ? scan.completedAt.getTime() : scan.completedAt,
+      progress: scan.progress,
+      current_step: scan.currentStep,
+      results: scan.results,
+      error: scan.error,
+      cost: scan.cost || 0
+    }));
+
+    return NextResponse.json(formattedScans);
   } catch (error) {
     console.error('Error fetching scans:', error);
     return NextResponse.json(

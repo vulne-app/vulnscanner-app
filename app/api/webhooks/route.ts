@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWebhooks, createWebhook, deleteWebhook } from '@/app/lib/db';
-
-const DEFAULT_USER_ID = 'default_user';
+import { getUserFromSession } from '@/app/lib/auth';
 
 /**
  * GET /api/webhooks
@@ -9,10 +8,17 @@ const DEFAULT_USER_ID = 'default_user';
  */
 export async function GET() {
   try {
-    const webhooks = getWebhooks(DEFAULT_USER_ID);
+    const userId = await getUserFromSession();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const webhooks = getWebhooks(userId);
 
     return NextResponse.json({
-      webhooks
+      webhooks,
+      count: webhooks.length
     });
 
   } catch (error) {
@@ -30,6 +36,12 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserFromSession();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { name, url, events, secret } = body;
 
@@ -40,7 +52,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const webhookId = createWebhook(DEFAULT_USER_ID, { name, url, events, secret });
+    // Validate URL
+    try {
+      new URL(url);
+    } catch {
+      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+    }
+
+    const webhookId = createWebhook(userId, { name, url, events, secret });
 
     return NextResponse.json({
       success: true,
@@ -63,6 +82,12 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const userId = await getUserFromSession();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { webhook_id } = body;
 
@@ -73,7 +98,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    deleteWebhook(webhook_id, DEFAULT_USER_ID);
+    deleteWebhook(webhook_id, userId);
 
     return NextResponse.json({
       success: true,

@@ -68,8 +68,14 @@ export default function Navigation() {
             />
           </Link>
 
-          {/* Navigation Links - Only show if authenticated */}
-          {isAuthenticated ? (
+          {/* Navigation Links - Show skeleton during loading */}
+          {loading ? (
+            <div className="hidden md:flex items-center gap-6">
+              <div className="w-16 h-6 bg-gray-800 animate-pulse"></div>
+              <div className="w-24 h-6 bg-gray-800 animate-pulse"></div>
+              <div className="w-16 h-6 bg-gray-800 animate-pulse"></div>
+            </div>
+          ) : isAuthenticated ? (
             <div className="hidden md:flex items-center gap-6">
               <Link href="/scan" className={`font-bold transition-colors ${isActive('/scan')}`}>
                 SCAN
@@ -89,23 +95,23 @@ export default function Navigation() {
                 <div className="absolute top-full right-0 mt-2 w-48 terminal-border bg-black/95 backdrop-blur-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                   <div className="flex flex-col p-2">
                     <Link href="/profile" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
-                      👤 Profile
+                      [U] Profile
                     </Link>
                     <Link href="/settings" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
-                      ⚙️ Settings
+                      [*] Settings
                     </Link>
                     <Link href="/api-keys" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
-                      🔑 API Keys
+                      [K] API Keys
                     </Link>
                     <Link href="/integrations" className="px-4 py-2 hover:bg-purple-900/20 transition-all text-sm">
-                      🔗 Integrations
+                      [+] Integrations
                     </Link>
                     <div className="border-t border-purple-600 my-1"></div>
                     <button
                       onClick={handleLogout}
                       className="px-4 py-2 hover:bg-red-900/20 text-red-400 hover:text-red-300 transition-all text-sm text-left w-full"
                     >
-                      🚪 Logout
+                      [X] Logout
                     </button>
                   </div>
                 </div>
@@ -113,22 +119,20 @@ export default function Navigation() {
             </div>
           ) : (
             /* Show login/register for non-authenticated users */
-            !loading && (
-              <div className="hidden md:flex items-center gap-4">
-                <Link
-                  href="/login"
-                  className="px-4 py-2 font-bold text-gray-400 hover:text-purple-300 transition-colors"
-                >
-                  [LOGIN]
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all"
-                >
-                  [SIGN UP]
-                </Link>
-              </div>
-            )
+            <div className="hidden md:flex items-center gap-4">
+              <Link
+                href="/login"
+                className="px-4 py-2 font-bold text-gray-400 hover:text-purple-300 transition-colors"
+              >
+                [LOGIN]
+              </Link>
+              <Link
+                href="/register"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 border-2 border-purple-400 font-bold transition-all"
+              >
+                [SIGN UP]
+              </Link>
+            </div>
           )}
 
           {/* Token Display - Only show if authenticated */}
