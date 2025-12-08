@@ -24,11 +24,13 @@ export interface Vulnerability {
   description: string;
   location?: string;
   evidence?: string;
+  fix?: string;
 }
 
 export interface ScanResult {
   scanId: string;
   target: string;
+  scanDate?: string; 
   status: 'pending' | 'running' | 'completed' | 'failed';
   startedAt: Date;
   completedAt?: Date;
@@ -59,4 +61,12 @@ export interface HiddenFileVulnerability {
   status: number;
   evidence: string;
   recommendation?: string;
+}
+
+export interface ScanWebhookPayload {
+  target: string;
+  scanId: string;
+  status: 'running' | 'completed' | 'failed';
+  results?: ScanResult['results'];
+  userEmail?: string;
 }
