@@ -724,7 +724,7 @@ export async function ultraScanSQLi(target: string, forms: any[]): Promise<Vulne
     // Combiner tous les payloads SQLi pour les tests URL
     const allPayloads = [
       ...SQLI_PAYLOADS.basic,
-      ...SQLI_PAYLOADS.unionBased,
+      ...SQLI_PAYLOADS.union,
       ...SQLI_PAYLOADS.timeBased,
       ...SQLI_PAYLOADS.errorBased,
     ];
