@@ -66,9 +66,12 @@ export function deleteSession(sessionId: string): void {
  * Set session cookie in response
  */
 export function setSessionCookie(response: NextResponse, sessionId: string, userId?: string): void {
+  // Use SECURE_COOKIES env var to control secure flag (for HTTP deployments)
+  const useSecureCookies = process.env.SECURE_COOKIES === 'true';
+
   response.cookies.set(SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: useSecureCookies,
     sameSite: 'lax',
     maxAge: SESSION_DURATION / 1000, // in seconds
     path: '/'
@@ -78,7 +81,7 @@ export function setSessionCookie(response: NextResponse, sessionId: string, user
   if (userId) {
     response.cookies.set(USER_ID_COOKIE_NAME, userId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: useSecureCookies,
       sameSite: 'lax',
       maxAge: SESSION_DURATION / 1000,
       path: '/'
